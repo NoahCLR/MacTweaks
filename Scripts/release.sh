@@ -78,8 +78,11 @@ gh release create "$TAG" "$ZIP_PATH" \
   --notes "Install or upgrade with:
 
 \`\`\`sh
-brew install --no-quarantine NoahCLR/tap/$CASK_TOKEN
-\`\`\`"
+brew install NoahCLR/tap/$CASK_TOKEN
+xattr -dr com.apple.quarantine \"/Applications/Mac Tweaks.app\"
+\`\`\`
+
+The \`xattr\` line clears Gatekeeper quarantine (the app is signed but not notarized)."
 
 echo "Updating cask in $TAP_REPO..."
 TAP_DIR="$BUILD_DIR/homebrew-tap"
@@ -95,7 +98,7 @@ cask "$CASK_TOKEN" do
   desc "Menu bar utility with opt-in Finder and keyboard tweaks"
   homepage "https://github.com/$APP_REPO"
 
-  depends_on macos: ">= :sonoma"
+  depends_on macos: :sonoma
 
   app "Mac Tweaks.app"
 
@@ -108,10 +111,12 @@ cask "$CASK_TOKEN" do
   ]
 
   caveats <<~EOS
-    Mac Tweaks is signed with a development certificate and is not notarized.
-    If macOS blocks the first launch, either reinstall with:
-      brew reinstall --cask --no-quarantine $CASK_TOKEN
-    or right-click "Mac Tweaks" in /Applications and choose Open once.
+    Mac Tweaks is signed with a development certificate and is not notarized,
+    so Gatekeeper blocks the first launch. Either clear the quarantine flag:
+      xattr -dr com.apple.quarantine "/Applications/Mac Tweaks.app"
+    or launch once, then approve it under
+    System Settings > Privacy & Security > Open Anyway.
+    The same applies after every brew upgrade.
 
     After launching, enable the tweaks you want and grant the permissions
     each one needs (the app's Settings window links to the right panes):
@@ -131,4 +136,4 @@ fi
 
 echo ""
 echo "Released Mac Tweaks $VERSION."
-echo "Install with: brew install --no-quarantine ${TAP_REPO%%/homebrew-*}/tap/$CASK_TOKEN"
+echo "Install with: brew install ${TAP_REPO%%/homebrew-*}/tap/$CASK_TOKEN"

@@ -12,20 +12,12 @@ identity_exists() {
   security find-identity -v -p codesigning 2>/dev/null | awk -F '"' -v name="$identity" '$2 == name { found = 1 } END { exit found ? 0 : 1 }'
 }
 
-apple_development_identity() {
-  security find-identity -v -p codesigning 2>/dev/null | awk -F '"' '$2 ~ /^Apple Development: / { print $2; exit }'
-}
-
-apple_development_certificate() {
-  security find-certificate -a -c "Apple Development" -Z 2>/dev/null | awk -F '"' '/"alis"<blob>=/ { print $4; exit }'
-}
-
 create_local_signing_identity() {
   mkdir -p "$SIGNING_DIR"
 
   local key_file="$SIGNING_DIR/local-code-signing.key.pem"
+  local rsa_key_file="$SIGNING_DIR/local-code-signing.key.rsa.pem"
   local cert_file="$SIGNING_DIR/local-code-signing.cert.pem"
-  local p12_file="$SIGNING_DIR/local-code-signing.p12"
   local openssl_config="$SIGNING_DIR/local-code-signing.openssl.cnf"
 
   if [[ ! -f "$key_file" || ! -f "$cert_file" ]]; then
@@ -60,16 +52,14 @@ EOF
     chmod 600 "$key_file"
   fi
 
-  openssl pkcs12 \
-    -export \
-    -inkey "$key_file" \
-    -in "$cert_file" \
-    -out "$p12_file" \
-    -name "$LOCAL_SIGNING_IDENTITY" \
-    -passout "pass:" >/dev/null 2>&1
-  chmod 600 "$p12_file"
+  # Import key + cert as PEMs. The PKCS12 route fails on macOS: security(1)
+  # rejects LibreSSL p12 exports with "MAC verification failed" regardless of
+  # password. The key must be in traditional RSA form for security import.
+  openssl rsa -in "$key_file" -out "$rsa_key_file" >/dev/null 2>&1
+  chmod 600 "$rsa_key_file"
 
-  security import "$p12_file" -k "$LOGIN_KEYCHAIN" -P "" -A >/dev/null || true
+  security import "$rsa_key_file" -k "$LOGIN_KEYCHAIN" -t priv -f openssl -A >/dev/null 2>&1 || true
+  security import "$cert_file" -k "$LOGIN_KEYCHAIN" >/dev/null 2>&1 || true
   security add-trusted-cert -r trustRoot -p codeSign -k "$LOGIN_KEYCHAIN" "$cert_file" >/dev/null 2>&1 || true
 }
 
@@ -85,22 +75,9 @@ ensure_signing_identity() {
     exit 1
   fi
 
-  local apple_identity
-  apple_identity="$(apple_development_identity)"
-  if [[ -n "$apple_identity" ]]; then
-    SIGNING_IDENTITY="$apple_identity"
-    echo "Using Apple Development signing identity: $SIGNING_IDENTITY"
-    return
-  fi
-
-  local apple_certificate
-  apple_certificate="$(apple_development_certificate)"
-  if [[ -n "$apple_certificate" ]]; then
-    echo "Found Apple Development certificate, but it is not a usable signing identity: $apple_certificate" >&2
-    echo "It is probably missing its private key. In Xcode > Settings > Accounts > Manage Certificates, create an Apple Development certificate from that screen, then rerun this script." >&2
-    echo "Falling back to a stable local signing identity for this install." >&2
-  fi
-
+  # Default to the neutral self-signed identity: it embeds no Apple ID email in
+  # the signature, and Gatekeeper treats unnotarized apps the same regardless of
+  # certificate. Set MAC_TWEAKS_SIGNING_IDENTITY to use a different identity.
   SIGNING_IDENTITY="$LOCAL_SIGNING_IDENTITY"
   if identity_exists "$SIGNING_IDENTITY"; then
     echo "Using local signing identity: $SIGNING_IDENTITY"

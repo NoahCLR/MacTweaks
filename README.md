@@ -20,10 +20,11 @@ Keyboard tweak, scoped to Finder only:
 ### Homebrew
 
 ```sh
-brew install --no-quarantine NoahCLR/tap/mac-tweaks
+brew install NoahCLR/tap/mac-tweaks
+xattr -dr com.apple.quarantine "/Applications/Mac Tweaks.app"
 ```
 
-`--no-quarantine` is recommended: Mac Tweaks is built without a paid Apple Developer account, so it is signed but not notarized. If you install without the flag, macOS will block the first launch — right-click **Mac Tweaks** in `/Applications` and choose **Open** once to approve it.
+The `xattr` line is needed because Mac Tweaks is built without a paid Apple Developer account: it is signed but not notarized, so Gatekeeper blocks the first launch of a quarantined copy. If you'd rather not clear the quarantine flag, launch the app once, let macOS block it, then approve it under System Settings → Privacy & Security → **Open Anyway**. The same applies after `brew upgrade`.
 
 ### Build from source
 
@@ -33,7 +34,7 @@ No paid Apple Developer Program membership required:
 ./Scripts/install-local.sh
 ```
 
-The script builds the app, signs it with a stable identity, installs it to `/Applications`, registers the Finder extension, and launches it. It prefers an `Apple Development` certificate from your free Apple Account when Xcode has created one; otherwise it creates a stable self-signed certificate named `Mac Tweaks Local Code Signing`. See [Development](#development) for details.
+The script builds the app, signs it with a stable identity, installs it to `/Applications`, registers the Finder extension, and launches it. Signing uses a self-signed certificate named `Mac Tweaks Local Code Signing`, created automatically on first run. See [Development](#development) for details.
 
 ## First-run setup
 
@@ -64,13 +65,7 @@ Targets: `Mac Tweaks` (app), `MacTweaksFinderExtension` (Finder Sync extension e
 
 ### Local install and signing
 
-`./Scripts/install-local.sh` installs a local build to `/Applications`. A *stable* signing identity matters: re-signing with a different identity resets the app's Accessibility/Input Monitoring permissions. The script prefers an `Apple Development` certificate from your free Apple Account. To set one up:
-
-1. Open Xcode → Settings → Accounts and add your Apple Account.
-2. Select the account, open **Manage Certificates**, and create an **Apple Development** certificate.
-3. Rerun `./Scripts/install-local.sh`.
-
-The certificate must include its private key — verify with `security find-identity -v -p codesigning`. Without one, the script falls back to creating a stable self-signed certificate.
+`./Scripts/install-local.sh` installs a local build to `/Applications`. A *stable* signing identity matters: re-signing with a different identity resets the app's Accessibility/Input Monitoring permissions. The script signs with a self-signed certificate (`Mac Tweaks Local Code Signing`) that it creates once and reuses for every build — this also keeps personal Apple ID details out of the signature. To sign with a different identity instead (for example an `Apple Development` certificate), set `MAC_TWEAKS_SIGNING_IDENTITY` to its exact name; verify available identities with `security find-identity -v -p codesigning`.
 
 ### Releasing
 
