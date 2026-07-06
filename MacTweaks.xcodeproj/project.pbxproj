@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		000000000000000000000130 /* AppIcon.icns in Resources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000220 /* AppIcon.icns */; };
 		000000000000000000000101 /* MacTweaksApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000201 /* MacTweaksApp.swift */; };
 		000000000000000000000102 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000202 /* AppDelegate.swift */; };
 		000000000000000000000103 /* StatusMenuController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000203 /* StatusMenuController.swift */; };
@@ -78,6 +79,7 @@
 		000000000000000000000211 /* FinderActionServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinderActionServiceTests.swift; sourceTree = "<group>"; };
 		000000000000000000000212 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		000000000000000000000213 /* MacTweaks.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MacTweaks.entitlements; sourceTree = "<group>"; };
+		000000000000000000000220 /* AppIcon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = AppIcon.icns; sourceTree = "<group>"; };
 		000000000000000000000214 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		000000000000000000000215 /* FinderExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FinderExtension.entitlements; sourceTree = "<group>"; };
 		000000000000000000000216 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -208,6 +210,7 @@
 			children = (
 				000000000000000000000212 /* Info.plist */,
 				000000000000000000000213 /* MacTweaks.entitlements */,
+				000000000000000000000220 /* AppIcon.icns */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -223,6 +226,17 @@
 		};
 /* End PBXGroup section */
 
+/* Begin PBXResourcesBuildPhase section */
+		000000000000000000000D01 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				000000000000000000000130 /* AppIcon.icns in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
 /* Begin PBXNativeTarget section */
 		000000000000000000000501 /* Mac Tweaks */ = {
 			isa = PBXNativeTarget;
@@ -230,6 +244,7 @@
 			buildPhases = (
 				000000000000000000000A01 /* Sources */,
 				000000000000000000000701 /* Frameworks */,
+				000000000000000000000D01 /* Resources */,
 				000000000000000000000601 /* Embed App Extensions */,
 			);
 			buildRules = (
