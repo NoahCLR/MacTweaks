@@ -83,7 +83,7 @@ final class FinderSync: FIFinderSync {
             selectedURLs: selectedURLs,
             settings: settings
         )
-        let menu = actionMenu.buildMenu(for: context, snapshot: settings, resolution: .lazy)
+        let menu = actionMenu.buildMenu(for: context, snapshot: settings, resolution: .lazy, actionTarget: self)
         return menu.items.isEmpty ? nil : menu
     }
 
@@ -93,6 +93,22 @@ final class FinderSync: FIFinderSync {
 
     @objc private func volumeTopologyChanged() {
         refreshMonitoredFolders()
+    }
+
+    @objc private func createNewFileHere(_ sender: NSMenuItem) {
+        actionMenu.perform(.createNewFileHere, sender: sender)
+    }
+
+    @objc private func openInIDE(_ sender: NSMenuItem) {
+        actionMenu.perform(.openInIDE, sender: sender)
+    }
+
+    @objc private func copyPath(_ sender: NSMenuItem) {
+        actionMenu.perform(.copyPath, sender: sender)
+    }
+
+    @objc private func openTerminalHere(_ sender: NSMenuItem) {
+        actionMenu.perform(.openTerminalHere, sender: sender)
     }
 
     private func resolvedContext(

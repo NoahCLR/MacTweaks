@@ -51,20 +51,29 @@ final class FinderActionMenu: NSObject {
         super.init()
     }
 
-    /// Builds a menu of the enabled actions for `context`, with each item targeting
-    /// this presenter. The caller owns showing/tracking the menu.
+    /// Builds a menu of the enabled actions for `context`. The caller owns showing/
+    /// tracking the menu.
+    ///
+    /// `actionTarget` overrides the target/action receiver. In-process callers leave
+    /// it nil so items target this presenter directly. The Finder Sync extension
+    /// **must** pass its `FIFinderSync` principal object: Finder transports the
+    /// returned menu into its own process and only delivers menu-item actions to the
+    /// principal object, never to an in-extension helper like this presenter. The
+    /// target object must implement the same `@objc` action selectors (see
+    /// `selector(for:)`) and forward to `perform`.
     func buildMenu(
         for context: FinderMenuContext,
         snapshot: SettingsSnapshot,
         resolution: Resolution,
-        title: String = ""
+        title: String = "",
+        actionTarget: AnyObject? = nil
     ) -> NSMenu {
         let menu = NSMenu(title: title)
         menu.autoenablesItems = false
 
         for action in FinderMenuAction.enabledActions(settings: snapshot) {
             let item = NSMenuItem(title: action.title(settings: snapshot), action: selector(for: action), keyEquivalent: "")
-            item.target = self
+            item.target = actionTarget ?? self
             item.representedObject = context
             item.isEnabled = FinderActionMenu.isEnabled(action, context: context, snapshot: snapshot, resolution: resolution)
             menu.addItem(item)
@@ -118,7 +127,7 @@ final class FinderActionMenu: NSObject {
         }
     }
 
-    private func perform(_ action: FinderMenuAction, sender: NSMenuItem) {
+    func perform(_ action: FinderMenuAction, sender: NSMenuItem) {
         let snapshot = snapshotProvider()
         guard let context = contextResolver(action, sender, snapshot) else {
             NSSound.beep()

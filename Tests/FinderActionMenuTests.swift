@@ -136,4 +136,39 @@ final class FinderActionMenuTests: XCTestCase {
         XCTAssertFalse(actions.contains(.copyPath))
         XCTAssertTrue(actions.contains(.createNewFileHere))
     }
+
+    // MARK: - Target/action wiring
+
+    func testBuildMenuTargetsPresenterByDefault() throws {
+        let settings = snapshot()
+        let context = try resolvedContext(settings)
+        let actionMenu = FinderActionMenu(
+            snapshot: { settings },
+            resolveContext: { _, _, _ in context },
+            sink: { _ in }
+        )
+
+        let menu = actionMenu.buildMenu(for: context, snapshot: settings, resolution: .eager)
+
+        XCTAssertFalse(menu.items.isEmpty)
+        XCTAssertTrue(menu.items.allSatisfy { $0.target === actionMenu })
+    }
+
+    func testBuildMenuCanTargetExternalActionReceiver() throws {
+        final class ActionTarget: NSObject {}
+
+        let settings = snapshot()
+        let context = try resolvedContext(settings)
+        let target = ActionTarget()
+        let actionMenu = FinderActionMenu(
+            snapshot: { settings },
+            resolveContext: { _, _, _ in context },
+            sink: { _ in }
+        )
+
+        let menu = actionMenu.buildMenu(for: context, snapshot: settings, resolution: .lazy, actionTarget: target)
+
+        XCTAssertFalse(menu.items.isEmpty)
+        XCTAssertTrue(menu.items.allSatisfy { $0.target === target })
+    }
 }
