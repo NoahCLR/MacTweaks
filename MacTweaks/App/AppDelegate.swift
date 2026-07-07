@@ -1,9 +1,12 @@
 import AppKit
 import Combine
 import FinderSync
+import os
 import SwiftUI
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
+    private let logger = Logger(subsystem: "com.noah.MacTweaks", category: "AppDelegate")
+
     let settings = SharedSettingsStore()
     lazy var controllers = TweakControllers(settings: settings)
     lazy var finderServiceProvider = FinderServiceProvider(settings: settings)
@@ -21,6 +24,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.setActivationPolicy(.accessory)
         NSApp.servicesProvider = finderServiceProvider
         NSUpdateDynamicServices()
+        registerFinderExtension()
         statusMenuController = StatusMenuController(settings: settings)
         statusMenuController?.showSettings = { [weak self] in self?.showSettings() }
 
@@ -44,6 +48,36 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func showSettings() {
         NSApp.activate(ignoringOtherApps: true)
         settingsWindowController.show()
+    }
+
+    private func registerFinderExtension() {
+        guard let pluginsURL = Bundle.main.builtInPlugInsURL else {
+            logger.error("No built-in PlugIns directory found for Finder extension registration")
+            return
+        }
+
+        let extensionURL = pluginsURL.appendingPathComponent("MacTweaksFinderExtension.appex")
+        guard FileManager.default.fileExists(atPath: extensionURL.path) else {
+            logger.error("Finder extension bundle missing at \(extensionURL.path, privacy: .public)")
+            return
+        }
+
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/pluginkit")
+        process.arguments = ["-a", extensionURL.path]
+        process.terminationHandler = { [logger] process in
+            if process.terminationStatus == 0 {
+                logger.notice("Registered Finder extension at \(extensionURL.path, privacy: .public)")
+            } else {
+                logger.error("Finder extension registration failed with status \(process.terminationStatus)")
+            }
+        }
+
+        do {
+            try process.run()
+        } catch {
+            logger.error("Failed to launch pluginkit for Finder extension registration: \(error.localizedDescription, privacy: .public)")
+        }
     }
 
     private func startPermissionRefreshTimer() {
