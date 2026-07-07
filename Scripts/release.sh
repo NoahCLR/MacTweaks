@@ -102,6 +102,11 @@ cask "$CASK_TOKEN" do
 
   app "Mac Tweaks.app"
 
+  postflight do
+    system_command "/usr/bin/pluginkit",
+                   args: ["-a", "#{appdir}/Mac Tweaks.app/Contents/PlugIns/MacTweaksFinderExtension.appex"]
+  end
+
   uninstall quit: "com.noah.MacTweaks"
 
   zap trash: [
