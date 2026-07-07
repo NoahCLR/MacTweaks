@@ -106,26 +106,6 @@ struct SettingsView: View {
                         .padding(.vertical, 8)
                 }
             }
-
-            settingsSection("Default Apps") {
-                appPickerRow(
-                    title: "IDE",
-                    value: settings.ideApplicationURL?.deletingPathExtension().lastPathComponent ?? "Not selected",
-                    systemImage: "hammer",
-                    actionTitle: "Choose...",
-                    help: "App used by the Open in IDE Finder action.",
-                    action: chooseIDE
-                )
-                rowDivider()
-                appPickerRow(
-                    title: "Terminal",
-                    value: settings.terminalApplicationURL?.deletingPathExtension().lastPathComponent ?? "Not selected",
-                    systemImage: "terminal",
-                    actionTitle: "Choose...",
-                    help: "Terminal app used by the Open Terminal Finder action.",
-                    action: chooseTerminal
-                )
-            }
         }
     }
 
@@ -141,6 +121,26 @@ struct SettingsView: View {
                         finderActionToggleRow(.copyPath)
                         rowDivider()
                         finderActionToggleRow(.openTerminalHere)
+                    }
+
+                    settingsSection("Default Apps") {
+                        appPickerRow(
+                            title: "IDE",
+                            value: settings.ideApplicationURL?.deletingPathExtension().lastPathComponent ?? "Not selected",
+                            systemImage: "hammer",
+                            actionTitle: "Choose...",
+                            help: "App used by the Open in IDE Finder action.",
+                            action: chooseIDE
+                        )
+                        rowDivider()
+                        appPickerRow(
+                            title: "Terminal",
+                            value: settings.terminalApplicationURL?.deletingPathExtension().lastPathComponent ?? "Not selected",
+                            systemImage: "terminal",
+                            actionTitle: "Choose...",
+                            help: "Terminal app used by the Open Terminal Finder action.",
+                            action: chooseTerminal
+                        )
                     }
 
                     settingsSection("Behavior") {
@@ -203,6 +203,10 @@ struct SettingsView: View {
 
     private var keyboardTab: some View {
         settingsPage {
+            if keyboardTweaksNeedPermission {
+                permissionNotice
+            }
+
             settingsSection("Finder Keyboard") {
                 toggleRow(
                     title: "Backspace/Delete moves items to Trash",
@@ -215,7 +219,7 @@ struct SettingsView: View {
                     title: "Currently remapping Backspace",
                     status: keyboardController.isRunning ? "Active" : "Inactive",
                     tone: keyboardController.isRunning ? .green : .secondary,
-                    help: "Whether Backspace/Delete is being remapped to Move to Trash right now. Turns Active once the toggle above is on and Accessibility + Input Monitoring are granted (see Required Access below)."
+                    help: "Whether Backspace/Delete is being remapped to Move to Trash right now. Turns Active once the toggle above is on and Accessibility + Input Monitoring are granted (see the Permissions tab)."
                 )
             }
 
@@ -252,33 +256,41 @@ struct SettingsView: View {
                     )
                 }
             }
-
-            settingsSection("Required Access") {
-                permissionRow(
-                    title: "Accessibility",
-                    status: Permissions.isAccessibilityTrusted ? "Granted" : "Required",
-                    tone: Permissions.isAccessibilityTrusted ? .green : .orange,
-                    buttonTitle: "Request",
-                    help: "Required so Mac Tweaks can confirm Finder focus and route keyboard events correctly.",
-                    action: {
-                        Permissions.requestAccessibilityPermission()
-                        keyboardController.refresh()
-                    }
-                )
-                rowDivider()
-                permissionRow(
-                    title: "Input Monitoring",
-                    status: Permissions.canListenToInputEvents ? "Granted" : "Required",
-                    tone: Permissions.canListenToInputEvents ? .green : .orange,
-                    buttonTitle: "Request",
-                    help: "Required for the Backspace/Delete keyboard tweak.",
-                    action: {
-                        Permissions.requestInputEventPermission()
-                        keyboardController.refresh()
-                    }
-                )
-            }
         }
+    }
+
+    /// The keyboard/clipboard tweaks all rely on the two event-tap permissions;
+    /// show an inline pointer to the Permissions tab when a tweak is enabled but a
+    /// required permission is still missing (grant lives only on that tab).
+    private var keyboardTweaksNeedPermission: Bool {
+        let anyEnabled = settings.deleteKeyEnabled || settings.cutFilesEnabled || settings.clipboardToFileEnabled
+        let missing = !Permissions.isAccessibilityTrusted || !Permissions.canListenToInputEvents
+        return anyEnabled && missing
+    }
+
+    private var permissionNotice: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(.orange)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Permissions required")
+                    .font(.body.weight(.medium))
+                Text("These tweaks need Accessibility and Input Monitoring access to work.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+            Button("Open Permissions") {
+                withAnimation(.easeOut(duration: 0.15)) { selection = .permissions }
+            }
+            .help("Grant Accessibility and Input Monitoring on the Permissions tab.")
+        }
+        .padding(12)
+        .background(Color.orange.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(Color.orange.opacity(0.3), lineWidth: 1)
+        )
     }
 
     private var permissionsTab: some View {
@@ -581,18 +593,19 @@ struct SettingsView: View {
         .help(url.path)
     }
 
+    // Settings labels stay generic ("Open in IDE" / "Open in Terminal") because the
+    // chosen app is shown in the Default Apps section below; the actual Finder menu
+    // uses the dynamic app name via FinderMenuAction.title(settings:).
     private func finderActionTitle(_ action: FinderMenuAction) -> String {
         switch action {
         case .createNewFileHere:
             return "Create New File Here"
         case .openInIDE:
-            let ideName = settings.ideApplicationURL?.deletingPathExtension().lastPathComponent ?? "IDE"
-            return "Open in \(ideName)"
+            return "Open in IDE"
         case .copyPath:
             return "Copy Path"
         case .openTerminalHere:
-            let terminalName = settings.terminalApplicationURL?.deletingPathExtension().lastPathComponent ?? "Terminal"
-            return "Open in \(terminalName)"
+            return "Open in Terminal"
         }
     }
 
@@ -688,7 +701,7 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
         switch self {
         case .general: return "General"
         case .finderActions: return "Finder Actions"
-        case .keyboard: return "Keyboard"
+        case .keyboard: return "Keyboard & Clipboard"
         case .permissions: return "Permissions"
         }
     }

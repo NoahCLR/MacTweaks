@@ -55,26 +55,11 @@ final class StatusMenuController: NSObject {
         submenuItem(title: "Finder Actions") { submenu in
             let snapshot = settings.currentSnapshot
 
-            submenu.addItem(toggleMenuItem(
-                title: "Create New File",
-                action: #selector(toggleCreateFile),
-                state: settings.createFileEnabled
-            ))
-            submenu.addItem(toggleMenuItem(
-                title: FinderMenuAction.openInIDE.title(settings: snapshot),
-                action: #selector(toggleOpenInIDE),
-                state: settings.openInIDEEnabled
-            ))
-            submenu.addItem(toggleMenuItem(
-                title: "Copy Path",
-                action: #selector(toggleCopyPath),
-                state: settings.copyPathEnabled
-            ))
-            submenu.addItem(toggleMenuItem(
-                title: FinderMenuAction.openTerminalHere.title(settings: snapshot),
-                action: #selector(toggleOpenTerminal),
-                state: settings.openTerminalEnabled
-            ))
+            // Follow the user's configured menu order (Settings → Finder Actions →
+            // Menu Order), the same array that drives the real Finder right-click menu.
+            for action in settings.finderActionOrder {
+                submenu.addItem(finderActionToggleItem(action, snapshot: snapshot))
+            }
             submenu.addItem(.separator())
 
             let fallbackItem = toggleMenuItem(
@@ -84,6 +69,35 @@ final class StatusMenuController: NSObject {
             )
             fallbackItem.toolTip = "Shows Mac Tweaks actions on Option-right-click where the native Finder menu isn't available (e.g. the Desktop and cloud folders)."
             submenu.addItem(fallbackItem)
+        }
+    }
+
+    private func finderActionToggleItem(_ action: FinderMenuAction, snapshot: SettingsSnapshot) -> NSMenuItem {
+        switch action {
+        case .createNewFileHere:
+            return toggleMenuItem(
+                title: "Create New File",
+                action: #selector(toggleCreateFile),
+                state: settings.createFileEnabled
+            )
+        case .openInIDE:
+            return toggleMenuItem(
+                title: FinderMenuAction.openInIDE.title(settings: snapshot),
+                action: #selector(toggleOpenInIDE),
+                state: settings.openInIDEEnabled
+            )
+        case .copyPath:
+            return toggleMenuItem(
+                title: "Copy Path",
+                action: #selector(toggleCopyPath),
+                state: settings.copyPathEnabled
+            )
+        case .openTerminalHere:
+            return toggleMenuItem(
+                title: FinderMenuAction.openTerminalHere.title(settings: snapshot),
+                action: #selector(toggleOpenTerminal),
+                state: settings.openTerminalEnabled
+            )
         }
     }
 
