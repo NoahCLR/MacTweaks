@@ -9,19 +9,27 @@ struct SettingsView: View {
     @State private var launchAtLogin = LaunchAtLoginController.isEnabled
     @State private var launchAtLoginError: String?
     @State private var finderExtensionEnabled = FIFinderSyncController.isExtensionEnabled
+    @State private var selection: SettingsTab = .general
 
     var body: some View {
-        TabView {
-            generalTab
-                .tabItem { Label("General", systemImage: "switch.2") }
-            finderActionsTab
-                .tabItem { Label("Finder Actions", systemImage: "folder") }
-            keyboardTab
-                .tabItem { Label("Keyboard", systemImage: "keyboard") }
-            permissionsTab
-                .tabItem { Label("Permissions", systemImage: "lock.shield") }
+        VStack(spacing: 20) {
+            tabBar
+                .padding(.horizontal, 24)
+
+            // The content ScrollView is full-width so its scroll indicator gets its
+            // own lane at the window edge; the cards inside are inset 24 (matching
+            // the tab bar) so the scrollbar never overlaps a control.
+            Group {
+                switch selection {
+                case .general: generalTab
+                case .finderActions: finderActionsTab
+                case .keyboard: keyboardTab
+                case .permissions: permissionsTab
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
-        .padding(24)
+        .padding(.top, 24)
         .frame(minWidth: 820, minHeight: 620)
         .onAppear {
             refreshFinderExtensionStatus()
@@ -29,6 +37,39 @@ struct SettingsView: View {
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             refreshFinderExtensionStatus()
         }
+    }
+
+    // Custom segmented tab bar: full-width, equal-width tabs so the selection
+    // aligns with the content cards below (the stock TabView strip is centered and
+    // narrower). Liquid Glass container on macOS 26, material fallback otherwise.
+    private var tabBar: some View {
+        HStack(spacing: 4) {
+            ForEach(SettingsTab.allCases) { tab in
+                let isSelected = selection == tab
+                Button {
+                    withAnimation(.easeOut(duration: 0.15)) { selection = tab }
+                } label: {
+                    Label(tab.title, systemImage: tab.symbol)
+                        .labelStyle(.titleAndIcon)
+                        .font(.subheadline.weight(.medium))
+                        .lineLimit(1)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .frame(maxWidth: .infinity)
+                        .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(isSelected ? Color.white : Color.primary)
+                .background {
+                    if isSelected {
+                        Capsule(style: .continuous).fill(Color.accentColor)
+                    }
+                }
+            }
+        }
+        .padding(5)
+        .modifier(GlassCapsule())
+        .focusEffectDisabled()
     }
 
     private var generalTab: some View {
@@ -171,34 +212,68 @@ struct SettingsView: View {
                 )
                 rowDivider()
                 statusRow(
-                    title: "Keyboard tap",
-                    status: keyboardController.isRunning ? "Running" : "Stopped",
+                    title: "Currently remapping Backspace",
+                    status: keyboardController.isRunning ? "Active" : "Inactive",
                     tone: keyboardController.isRunning ? .green : .secondary,
-                    help: "Shows whether the low-level keyboard listener is currently active."
+                    help: "Whether Backspace/Delete is being remapped to Move to Trash right now. Turns Active once the toggle above is on and Accessibility + Input Monitoring are granted (see Required Access below)."
                 )
+            }
+
+            settingsSection("Cut & Paste Files") {
+                toggleRow(
+                    title: "Cut & paste files with ⌘X / ⌘V (Windows-style move)",
+                    detail: "In Finder, ⌘X marks the selected files and the next ⌘V moves them into the current folder. ⌘Z undoes the move.",
+                    help: "⌘X copies the selection to the clipboard and marks it as a cut; a following plain ⌘V asks Finder to move those files. Finder performs the move, so it is undoable and handles permissions, name conflicts, and cross-volume moves. A ⌘C in between cancels the cut. ⌘X inside a rename field still cuts text normally.",
+                    isOn: $settings.cutFilesEnabled
+                )
+            }
+
+            settingsSection("Clipboard") {
+                toggleRow(
+                    title: "Paste clipboard as a file",
+                    detail: "In Finder, ⌘V turns clipboard data (like a screenshot) into a file in the current folder.",
+                    help: "Intercepts ⌘V while Finder is frontmost. Copied files and rename fields still paste normally; only raw image or text data becomes a file.",
+                    isOn: $settings.clipboardToFileEnabled
+                )
+                if settings.clipboardToFileEnabled {
+                    rowDivider()
+                    toggleRow(
+                        title: "Images",
+                        detail: "Screenshots and copied images are saved as .png (or .jpg when copied as JPEG).",
+                        help: "PNG and JPEG data keep their format; anything else (e.g. a TIFF screenshot) is saved as PNG.",
+                        isOn: $settings.pasteImageAsFile
+                    )
+                    rowDivider()
+                    toggleRow(
+                        title: "Text",
+                        detail: "Copied text is saved as .rtf when styled, otherwise .txt.",
+                        help: "Only used when the clipboard has no image. Rich text is preserved as .rtf; plain text becomes UTF-8 .txt.",
+                        isOn: $settings.pasteTextAsFile
+                    )
+                }
             }
 
             settingsSection("Required Access") {
                 permissionRow(
                     title: "Accessibility",
-                    status: KeyboardDeleteController.isAccessibilityTrusted ? "Granted" : "Required",
-                    tone: KeyboardDeleteController.isAccessibilityTrusted ? .green : .orange,
+                    status: Permissions.isAccessibilityTrusted ? "Granted" : "Required",
+                    tone: Permissions.isAccessibilityTrusted ? .green : .orange,
                     buttonTitle: "Request",
                     help: "Required so Mac Tweaks can confirm Finder focus and route keyboard events correctly.",
                     action: {
-                        KeyboardDeleteController.requestAccessibilityPermission()
+                        Permissions.requestAccessibilityPermission()
                         keyboardController.refresh()
                     }
                 )
                 rowDivider()
                 permissionRow(
                     title: "Input Monitoring",
-                    status: KeyboardDeleteController.canListenToInputEvents ? "Granted" : "Required",
-                    tone: KeyboardDeleteController.canListenToInputEvents ? .green : .orange,
+                    status: Permissions.canListenToInputEvents ? "Granted" : "Required",
+                    tone: Permissions.canListenToInputEvents ? .green : .orange,
                     buttonTitle: "Request",
                     help: "Required for the Backspace/Delete keyboard tweak.",
                     action: {
-                        KeyboardDeleteController.requestInputEventPermission()
+                        Permissions.requestInputEventPermission()
                         keyboardController.refresh()
                     }
                 )
@@ -222,8 +297,8 @@ struct SettingsView: View {
             settingsSection("Privacy Permissions") {
                 permissionRow(
                     title: "Accessibility",
-                    status: KeyboardDeleteController.isAccessibilityTrusted ? "Granted" : "Required",
-                    tone: KeyboardDeleteController.isAccessibilityTrusted ? .green : .orange,
+                    status: Permissions.isAccessibilityTrusted ? "Granted" : "Required",
+                    tone: Permissions.isAccessibilityTrusted ? .green : .orange,
                     buttonTitle: "Open Settings",
                     help: "System privacy permission used by the fallback menu and keyboard tweak.",
                     action: openAccessibilitySettings
@@ -231,8 +306,8 @@ struct SettingsView: View {
                 rowDivider()
                 permissionRow(
                     title: "Input Monitoring",
-                    status: KeyboardDeleteController.canListenToInputEvents ? "Granted" : "Required",
-                    tone: KeyboardDeleteController.canListenToInputEvents ? .green : .orange,
+                    status: Permissions.canListenToInputEvents ? "Granted" : "Required",
+                    tone: Permissions.canListenToInputEvents ? .green : .orange,
                     buttonTitle: "Open Settings",
                     help: "System privacy permission required for listening to Backspace/Delete.",
                     action: openInputMonitoringSettings
@@ -247,6 +322,7 @@ struct SettingsView: View {
                 content()
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 24)
             .padding(.bottom, 20)
         }
     }
@@ -597,6 +673,47 @@ struct SettingsView: View {
 
     private func refreshFinderExtensionStatus() {
         finderExtensionEnabled = FIFinderSyncController.isExtensionEnabled
+    }
+}
+
+private enum SettingsTab: String, CaseIterable, Identifiable {
+    case general
+    case finderActions
+    case keyboard
+    case permissions
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .general: return "General"
+        case .finderActions: return "Finder Actions"
+        case .keyboard: return "Keyboard"
+        case .permissions: return "Permissions"
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .general: return "switch.2"
+        case .finderActions: return "folder"
+        case .keyboard: return "keyboard"
+        case .permissions: return "lock.shield"
+        }
+    }
+}
+
+/// Wraps content in a Liquid Glass capsule on macOS 26+, falling back to a
+/// material-filled capsule on earlier systems (the app deploys to macOS 14).
+private struct GlassCapsule: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(macOS 26.0, *) {
+            content.glassEffect(in: Capsule(style: .continuous))
+        } else {
+            content
+                .background(.regularMaterial, in: Capsule(style: .continuous))
+                .overlay(Capsule(style: .continuous).stroke(Color.secondary.opacity(0.15), lineWidth: 1))
+        }
     }
 }
 

@@ -6,7 +6,7 @@ struct MacTweaksApp: App {
 
     var body: some Scene {
         Settings {
-            SettingsView(settings: appDelegate.settings, keyboardController: appDelegate.keyboardController)
+            SettingsView(settings: appDelegate.settings, keyboardController: appDelegate.controllers.keyboard)
                 .frame(minWidth: 820, minHeight: 620)
         }
     }

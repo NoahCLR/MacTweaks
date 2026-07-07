@@ -21,9 +21,9 @@ enum FinderMenuAction: String, CaseIterable, Identifiable {
     case openTerminalHere
 
     static let defaultOrder: [FinderMenuAction] = [
+        .copyPath,
         .createNewFileHere,
         .openInIDE,
-        .copyPath,
         .openTerminalHere
     ]
 

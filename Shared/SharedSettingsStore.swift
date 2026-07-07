@@ -9,6 +9,10 @@ struct SettingsSnapshot {
     let openTerminalEnabled: Bool
     let enhancedFinderMenusEnabled: Bool
     let deleteKeyEnabled: Bool
+    let clipboardToFileEnabled: Bool
+    let pasteImageAsFile: Bool
+    let pasteTextAsFile: Bool
+    let cutFilesEnabled: Bool
     let openContainingFolderForFiles: Bool
     let ideApplicationURL: URL?
     let terminalApplicationURL: URL?
@@ -27,7 +31,11 @@ struct SettingsSnapshot {
         ideApplicationURL: URL?,
         terminalApplicationURL: URL?,
         finderActionOrder: [FinderMenuAction],
-        monitoredFolderURLs: [URL]
+        monitoredFolderURLs: [URL],
+        clipboardToFileEnabled: Bool = false,
+        pasteImageAsFile: Bool = true,
+        pasteTextAsFile: Bool = true,
+        cutFilesEnabled: Bool = false
     ) {
         self.masterEnabled = masterEnabled
         self.createFileEnabled = createFileEnabled
@@ -36,6 +44,10 @@ struct SettingsSnapshot {
         self.openTerminalEnabled = openTerminalEnabled
         self.enhancedFinderMenusEnabled = enhancedFinderMenusEnabled
         self.deleteKeyEnabled = deleteKeyEnabled
+        self.clipboardToFileEnabled = clipboardToFileEnabled
+        self.pasteImageAsFile = pasteImageAsFile
+        self.pasteTextAsFile = pasteTextAsFile
+        self.cutFilesEnabled = cutFilesEnabled
         self.openContainingFolderForFiles = openContainingFolderForFiles
         self.ideApplicationURL = ideApplicationURL
         self.terminalApplicationURL = terminalApplicationURL
@@ -46,50 +58,24 @@ struct SettingsSnapshot {
     init(defaults: UserDefaults = SharedDefaults.makeUserDefaults()) {
         let fileSettings = SharedDefaults.loadSettingsFile()
 
-        masterEnabled = fileSettings[SettingsKey.masterEnabled] as? Bool
-            ?? defaults.object(forKey: SettingsKey.masterEnabled) as? Bool
-            ?? true
-        createFileEnabled = fileSettings[SettingsKey.createFileEnabled] as? Bool
-            ?? defaults.object(forKey: SettingsKey.createFileEnabled) as? Bool
-            ?? true
-        openInIDEEnabled = fileSettings[SettingsKey.openInIDEEnabled] as? Bool
-            ?? defaults.object(forKey: SettingsKey.openInIDEEnabled) as? Bool
-            ?? true
-        copyPathEnabled = fileSettings[SettingsKey.copyPathEnabled] as? Bool
-            ?? defaults.object(forKey: SettingsKey.copyPathEnabled) as? Bool
-            ?? true
-        openTerminalEnabled = fileSettings[SettingsKey.openTerminalEnabled] as? Bool
-            ?? defaults.object(forKey: SettingsKey.openTerminalEnabled) as? Bool
-            ?? true
-        enhancedFinderMenusEnabled = fileSettings[SettingsKey.enhancedFinderMenusEnabled] as? Bool
-            ?? defaults.object(forKey: SettingsKey.enhancedFinderMenusEnabled) as? Bool
-            ?? true
-        deleteKeyEnabled = fileSettings[SettingsKey.deleteKeyEnabled] as? Bool
-            ?? defaults.object(forKey: SettingsKey.deleteKeyEnabled) as? Bool
-            ?? false
-        openContainingFolderForFiles = fileSettings[SettingsKey.openContainingFolderForFiles] as? Bool
-            ?? defaults.object(forKey: SettingsKey.openContainingFolderForFiles) as? Bool
-            ?? false
-
-        if let path = fileSettings[SettingsKey.ideApplicationPath] as? String, !path.isEmpty {
-            ideApplicationURL = URL(fileURLWithPath: path)
-        } else if let path = defaults.string(forKey: SettingsKey.ideApplicationPath), !path.isEmpty {
-            ideApplicationURL = URL(fileURLWithPath: path)
-        } else {
-            ideApplicationURL = FinderActionService.defaultIDEApplicationURL()
-        }
-
-        if let path = fileSettings[SettingsKey.terminalApplicationPath] as? String, !path.isEmpty {
-            terminalApplicationURL = URL(fileURLWithPath: path)
-        } else if let path = defaults.string(forKey: SettingsKey.terminalApplicationPath), !path.isEmpty {
-            terminalApplicationURL = URL(fileURLWithPath: path)
-        } else {
-            terminalApplicationURL = FinderActionService.defaultTerminalApplicationURL()
-        }
-
-        let storedActionOrder = fileSettings[SettingsKey.finderActionOrder] as? [String]
-            ?? defaults.stringArray(forKey: SettingsKey.finderActionOrder)
-        finderActionOrder = FinderMenuAction.normalizedOrder(rawValues: storedActionOrder)
+        // Bool / URL / action-order settings resolve through the registry
+        // (file → defaults → built-in default). `monitoredFolderPaths` below is the
+        // one exception: it carries bespoke legacy-migration and stays hand-written.
+        masterEnabled = SettingsSchema.masterEnabled.resolved(file: fileSettings, defaults: defaults)
+        createFileEnabled = SettingsSchema.createFileEnabled.resolved(file: fileSettings, defaults: defaults)
+        openInIDEEnabled = SettingsSchema.openInIDEEnabled.resolved(file: fileSettings, defaults: defaults)
+        copyPathEnabled = SettingsSchema.copyPathEnabled.resolved(file: fileSettings, defaults: defaults)
+        openTerminalEnabled = SettingsSchema.openTerminalEnabled.resolved(file: fileSettings, defaults: defaults)
+        enhancedFinderMenusEnabled = SettingsSchema.enhancedFinderMenusEnabled.resolved(file: fileSettings, defaults: defaults)
+        deleteKeyEnabled = SettingsSchema.deleteKeyEnabled.resolved(file: fileSettings, defaults: defaults)
+        clipboardToFileEnabled = SettingsSchema.clipboardToFileEnabled.resolved(file: fileSettings, defaults: defaults)
+        pasteImageAsFile = SettingsSchema.pasteImageAsFile.resolved(file: fileSettings, defaults: defaults)
+        pasteTextAsFile = SettingsSchema.pasteTextAsFile.resolved(file: fileSettings, defaults: defaults)
+        cutFilesEnabled = SettingsSchema.cutFilesEnabled.resolved(file: fileSettings, defaults: defaults)
+        openContainingFolderForFiles = SettingsSchema.openContainingFolderForFiles.resolved(file: fileSettings, defaults: defaults)
+        ideApplicationURL = SettingsSchema.ideApplicationURL.resolved(file: fileSettings, defaults: defaults)
+        terminalApplicationURL = SettingsSchema.terminalApplicationURL.resolved(file: fileSettings, defaults: defaults)
+        finderActionOrder = SettingsSchema.finderActionOrder.resolved(file: fileSettings, defaults: defaults)
 
         let storedPaths = fileSettings[SettingsKey.monitoredFolderPaths] as? [String]
             ?? defaults.stringArray(forKey: SettingsKey.monitoredFolderPaths)
@@ -113,6 +99,10 @@ final class SharedSettingsStore: ObservableObject {
     @Published var openTerminalEnabled: Bool { didSet { save(openTerminalEnabled, for: SettingsKey.openTerminalEnabled) } }
     @Published var enhancedFinderMenusEnabled: Bool { didSet { save(enhancedFinderMenusEnabled, for: SettingsKey.enhancedFinderMenusEnabled) } }
     @Published var deleteKeyEnabled: Bool { didSet { save(deleteKeyEnabled, for: SettingsKey.deleteKeyEnabled) } }
+    @Published var clipboardToFileEnabled: Bool { didSet { save(clipboardToFileEnabled, for: SettingsKey.clipboardToFileEnabled) } }
+    @Published var pasteImageAsFile: Bool { didSet { save(pasteImageAsFile, for: SettingsKey.pasteImageAsFile) } }
+    @Published var pasteTextAsFile: Bool { didSet { save(pasteTextAsFile, for: SettingsKey.pasteTextAsFile) } }
+    @Published var cutFilesEnabled: Bool { didSet { save(cutFilesEnabled, for: SettingsKey.cutFilesEnabled) } }
     @Published var openContainingFolderForFiles: Bool { didSet { save(openContainingFolderForFiles, for: SettingsKey.openContainingFolderForFiles) } }
     @Published var ideApplicationURL: URL? { didSet { save(ideApplicationURL?.path ?? "", for: SettingsKey.ideApplicationPath) } }
     @Published var terminalApplicationURL: URL? { didSet { save(terminalApplicationURL?.path ?? "", for: SettingsKey.terminalApplicationPath) } }
@@ -132,6 +122,10 @@ final class SharedSettingsStore: ObservableObject {
         openTerminalEnabled = snapshot.openTerminalEnabled
         enhancedFinderMenusEnabled = snapshot.enhancedFinderMenusEnabled
         deleteKeyEnabled = snapshot.deleteKeyEnabled
+        clipboardToFileEnabled = snapshot.clipboardToFileEnabled
+        pasteImageAsFile = snapshot.pasteImageAsFile
+        pasteTextAsFile = snapshot.pasteTextAsFile
+        cutFilesEnabled = snapshot.cutFilesEnabled
         openContainingFolderForFiles = snapshot.openContainingFolderForFiles
         ideApplicationURL = snapshot.ideApplicationURL
         terminalApplicationURL = snapshot.terminalApplicationURL
@@ -199,18 +193,13 @@ final class SharedSettingsStore: ObservableObject {
     }
 
     private func writeDefaultsIfMissing() {
-        if defaults.object(forKey: SettingsKey.masterEnabled) == nil { defaults.set(masterEnabled, forKey: SettingsKey.masterEnabled) }
-        if defaults.object(forKey: SettingsKey.createFileEnabled) == nil { defaults.set(createFileEnabled, forKey: SettingsKey.createFileEnabled) }
-        if defaults.object(forKey: SettingsKey.openInIDEEnabled) == nil { defaults.set(openInIDEEnabled, forKey: SettingsKey.openInIDEEnabled) }
-        if defaults.object(forKey: SettingsKey.copyPathEnabled) == nil { defaults.set(copyPathEnabled, forKey: SettingsKey.copyPathEnabled) }
-        if defaults.object(forKey: SettingsKey.openTerminalEnabled) == nil { defaults.set(openTerminalEnabled, forKey: SettingsKey.openTerminalEnabled) }
-        if defaults.object(forKey: SettingsKey.enhancedFinderMenusEnabled) == nil { defaults.set(enhancedFinderMenusEnabled, forKey: SettingsKey.enhancedFinderMenusEnabled) }
-        if defaults.object(forKey: SettingsKey.deleteKeyEnabled) == nil { defaults.set(deleteKeyEnabled, forKey: SettingsKey.deleteKeyEnabled) }
-        if defaults.object(forKey: SettingsKey.openContainingFolderForFiles) == nil { defaults.set(openContainingFolderForFiles, forKey: SettingsKey.openContainingFolderForFiles) }
-        if defaults.object(forKey: SettingsKey.ideApplicationPath) == nil { defaults.set(ideApplicationURL?.path ?? "", forKey: SettingsKey.ideApplicationPath) }
-        if defaults.object(forKey: SettingsKey.terminalApplicationPath) == nil { defaults.set(terminalApplicationURL?.path ?? "", forKey: SettingsKey.terminalApplicationPath) }
-        if defaults.object(forKey: SettingsKey.finderActionOrder) == nil { defaults.set(finderActionOrder.map(\.rawValue), forKey: SettingsKey.finderActionOrder) }
-        if defaults.object(forKey: SettingsKey.monitoredFolderPaths) == nil { defaults.set(monitoredFolderURLs.map(\.path), forKey: SettingsKey.monitoredFolderPaths) }
+        for setting in SettingsSchema.all where defaults.object(forKey: setting.key) == nil {
+            defaults.set(setting.currentStored(in: self), forKey: setting.key)
+        }
+        // monitoredFolderPaths is outside the registry (bespoke legacy migration).
+        if defaults.object(forKey: SettingsKey.monitoredFolderPaths) == nil {
+            defaults.set(monitoredFolderURLs.map(\.path), forKey: SettingsKey.monitoredFolderPaths)
+        }
         persistSettingsFile()
         notifyChanged()
     }
@@ -223,20 +212,13 @@ final class SharedSettingsStore: ObservableObject {
     }
 
     private func persistSettingsFile() {
-        SharedDefaults.writeSettingsFile([
-            SettingsKey.masterEnabled: masterEnabled,
-            SettingsKey.createFileEnabled: createFileEnabled,
-            SettingsKey.openInIDEEnabled: openInIDEEnabled,
-            SettingsKey.copyPathEnabled: copyPathEnabled,
-            SettingsKey.openTerminalEnabled: openTerminalEnabled,
-            SettingsKey.enhancedFinderMenusEnabled: enhancedFinderMenusEnabled,
-            SettingsKey.deleteKeyEnabled: deleteKeyEnabled,
-            SettingsKey.openContainingFolderForFiles: openContainingFolderForFiles,
-            SettingsKey.ideApplicationPath: ideApplicationURL?.path ?? "",
-            SettingsKey.terminalApplicationPath: terminalApplicationURL?.path ?? "",
-            SettingsKey.finderActionOrder: finderActionOrder.map(\.rawValue),
-            SettingsKey.monitoredFolderPaths: monitoredFolderURLs.map(\.path)
-        ])
+        var values: [String: Any] = [:]
+        for setting in SettingsSchema.all {
+            values[setting.key] = setting.currentStored(in: self)
+        }
+        // monitoredFolderPaths is outside the registry (bespoke legacy migration).
+        values[SettingsKey.monitoredFolderPaths] = monitoredFolderURLs.map(\.path)
+        SharedDefaults.writeSettingsFile(values)
     }
 
     private func notifyChanged() {

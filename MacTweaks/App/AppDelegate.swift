@@ -1,15 +1,15 @@
 import AppKit
 import Combine
+import FinderSync
 import SwiftUI
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     let settings = SharedSettingsStore()
-    lazy var keyboardController = KeyboardDeleteController(settings: settings)
-    lazy var finderContextMenuFallbackController = FinderContextMenuFallbackController(settings: settings)
+    lazy var controllers = TweakControllers(settings: settings)
     lazy var finderServiceProvider = FinderServiceProvider(settings: settings)
     private lazy var settingsWindowController = SettingsWindowController(
         settings: settings,
-        keyboardController: keyboardController
+        keyboardController: controllers.keyboard
     )
 
     private var statusMenuController: StatusMenuController?
@@ -23,24 +23,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSUpdateDynamicServices()
         statusMenuController = StatusMenuController(settings: settings)
         statusMenuController?.showSettings = { [weak self] in self?.showSettings() }
-        statusMenuController?.keyboardStatusTitle = { [weak self] in
-            self?.keyboardController.isRunning == true
-                ? "Backspace Keyboard Tap: Running"
-                : "Backspace Keyboard Tap: Stopped"
-        }
-        statusMenuController?.refreshControllers = { [weak self] in
-            self?.keyboardController.refresh()
-            self?.finderContextMenuFallbackController.refresh()
-        }
 
-        keyboardController.refresh()
-        finderContextMenuFallbackController.refresh()
+        controllers.refreshAll()
         startPermissionRefreshTimer()
         settings.objectWillChange
             .sink { [weak self] _ in
                 DispatchQueue.main.async {
-                    self?.keyboardController.refresh()
-                    self?.finderContextMenuFallbackController.refresh()
+                    self?.controllers.refreshAll()
                     self?.statusMenuController?.rebuildMenu()
                 }
             }
@@ -49,8 +38,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationWillTerminate(_ notification: Notification) {
         permissionRefreshTimer?.invalidate()
-        keyboardController.stop()
-        finderContextMenuFallbackController.stop()
+        controllers.stopAll()
     }
 
     private func showSettings() {
@@ -62,8 +50,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         lastPermissionState = currentPermissionState()
         permissionRefreshTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in
             guard let self else { return }
-            self.keyboardController.refresh()
-            self.finderContextMenuFallbackController.refresh()
+            self.controllers.refreshAll()
 
             let permissionState = self.currentPermissionState()
             if permissionState != self.lastPermissionState {
@@ -75,17 +62,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func currentPermissionState() -> PermissionState {
         PermissionState(
-            accessibility: KeyboardDeleteController.isAccessibilityTrusted,
-            inputMonitoring: KeyboardDeleteController.canListenToInputEvents,
-            keyboardTapRunning: keyboardController.isRunning
+            accessibility: Permissions.isAccessibilityTrusted,
+            inputMonitoring: Permissions.canListenToInputEvents,
+            finderExtensionEnabled: FIFinderSyncController.isExtensionEnabled
         )
     }
 }
 
+// Drives the status-menu rebuild: the menu's status line reflects these, so a
+// change to any of them (granted a permission, enabled the extension) refreshes
+// the menu on the next poll.
 private struct PermissionState: Equatable {
     let accessibility: Bool
     let inputMonitoring: Bool
-    let keyboardTapRunning: Bool
+    let finderExtensionEnabled: Bool
 }
 
 private final class SettingsWindowController {

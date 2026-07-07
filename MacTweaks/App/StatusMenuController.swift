@@ -3,8 +3,6 @@ import FinderSync
 
 final class StatusMenuController: NSObject {
     var showSettings: (() -> Void)?
-    var refreshControllers: (() -> Void)?
-    var keyboardStatusTitle: (() -> String)?
 
     private let settings: SharedSettingsStore
     private let statusItem: NSStatusItem
@@ -24,26 +22,21 @@ final class StatusMenuController: NSObject {
         menu.addItem(toggleMenuItem(
             title: "Enable Mac Tweaks",
             action: #selector(toggleMasterEnabled),
-            state: settings.masterEnabled,
-            toolTip: "Turns every Mac Tweaks Finder and keyboard feature on or off."
+            state: settings.masterEnabled
         ))
-        menu.addItem(disabledItem(statusSummaryTitle(), toolTip: "Current Mac Tweaks status."))
+        menu.addItem(statusSummaryItem())
         menu.addItem(.separator())
 
         menu.addItem(finderActionsMenuItem())
-        menu.addItem(defaultAppsMenuItem())
         menu.addItem(keyboardMenuItem())
-        menu.addItem(permissionsMenuItem())
 
         menu.addItem(.separator())
         let settingsItem = NSMenuItem(title: "Settings...", action: #selector(openSettings), keyEquivalent: ",")
         settingsItem.target = self
-        settingsItem.toolTip = "Open the Mac Tweaks Settings window."
         menu.addItem(settingsItem)
 
         let quitItem = NSMenuItem(title: "Quit Mac Tweaks", action: #selector(quit), keyEquivalent: "q")
         quitItem.target = self
-        quitItem.toolTip = "Quit the menu bar app."
         menu.addItem(quitItem)
 
         statusItem.menu = menu
@@ -53,241 +46,129 @@ final class StatusMenuController: NSObject {
         guard let button = statusItem.button else { return }
         button.image = NSImage(systemSymbolName: "slider.horizontal.3", accessibilityDescription: "Mac Tweaks")
         button.imagePosition = .imageOnly
-        button.toolTip = statusSummaryTitle()
+        button.toolTip = currentStatus().title
     }
 
+    // Menu-bar surfaces quick toggles only. Reordering actions, choosing default
+    // apps, and granting permissions live in Settings (the "Settings..." item).
     private func finderActionsMenuItem() -> NSMenuItem {
-        submenuItem(title: "Finder Actions", toolTip: "Configure the actions shown in Finder right-click menus.") { submenu in
+        submenuItem(title: "Finder Actions") { submenu in
             let snapshot = settings.currentSnapshot
 
             submenu.addItem(toggleMenuItem(
                 title: "Create New File",
                 action: #selector(toggleCreateFile),
-                state: settings.createFileEnabled,
-                toolTip: "Adds a blank file in the current Finder folder."
+                state: settings.createFileEnabled
             ))
             submenu.addItem(toggleMenuItem(
                 title: FinderMenuAction.openInIDE.title(settings: snapshot),
                 action: #selector(toggleOpenInIDE),
-                state: settings.openInIDEEnabled,
-                toolTip: "Opens the selected Finder item with the configured IDE."
+                state: settings.openInIDEEnabled
             ))
             submenu.addItem(toggleMenuItem(
                 title: "Copy Path",
                 action: #selector(toggleCopyPath),
-                state: settings.copyPathEnabled,
-                toolTip: "Copies selected Finder item paths to the clipboard."
+                state: settings.copyPathEnabled
             ))
             submenu.addItem(toggleMenuItem(
                 title: FinderMenuAction.openTerminalHere.title(settings: snapshot),
                 action: #selector(toggleOpenTerminal),
-                state: settings.openTerminalEnabled,
-                toolTip: "Opens the selected Finder folder with the configured terminal."
+                state: settings.openTerminalEnabled
             ))
             submenu.addItem(.separator())
-            submenu.addItem(toggleMenuItem(
-                title: "Option-click Menu",
+
+            let fallbackItem = toggleMenuItem(
+                title: "Fallback Menu (⌥-Right-Click)",
                 action: #selector(toggleEnhancedFinderMenus),
-                state: settings.enhancedFinderMenusEnabled,
-                toolTip: "Shows the fallback Mac Tweaks menu with Option-right-click in Finder locations where extensions are unreliable."
-            ))
-            submenu.addItem(toggleMenuItem(
-                title: "Open Parent for Files",
-                action: #selector(toggleOpenContainingFolderForFiles),
-                state: settings.openContainingFolderForFiles,
-                toolTip: "Targets the containing folder when a file is selected for IDE or terminal actions."
-            ))
-            submenu.addItem(.separator())
-            submenu.addItem(finderActionOrderMenuItem())
-        }
-    }
-
-    private func defaultAppsMenuItem() -> NSMenuItem {
-        submenuItem(title: "Default Apps", toolTip: "Choose the apps used by Finder actions.") { submenu in
-            let ideTitle = settings.ideApplicationURL?.deletingPathExtension().lastPathComponent ?? "Not Selected"
-            submenu.addItem(disabledItem("IDE: \(shortMenuTitle(ideTitle, maxLength: 24))", toolTip: "Current IDE: \(ideTitle)"))
-            let chooseIDEItem = NSMenuItem(title: "Choose IDE...", action: #selector(chooseIDE), keyEquivalent: "")
-            chooseIDEItem.target = self
-            chooseIDEItem.toolTip = "Choose the app used by Open in IDE."
-            submenu.addItem(chooseIDEItem)
-
-            submenu.addItem(.separator())
-
-            let terminalTitle = settings.terminalApplicationURL?.deletingPathExtension().lastPathComponent ?? "Not Selected"
-            submenu.addItem(disabledItem("Terminal: \(shortMenuTitle(terminalTitle, maxLength: 19))", toolTip: "Current terminal: \(terminalTitle)"))
-            let chooseTerminalItem = NSMenuItem(title: "Choose Terminal...", action: #selector(chooseTerminal), keyEquivalent: "")
-            chooseTerminalItem.target = self
-            chooseTerminalItem.toolTip = "Choose the app used by Open Terminal."
-            submenu.addItem(chooseTerminalItem)
+                state: settings.enhancedFinderMenusEnabled
+            )
+            fallbackItem.toolTip = "Shows Mac Tweaks actions on Option-right-click where the native Finder menu isn't available (e.g. the Desktop and cloud folders)."
+            submenu.addItem(fallbackItem)
         }
     }
 
     private func keyboardMenuItem() -> NSMenuItem {
-        submenuItem(title: "Keyboard", toolTip: "Configure Finder keyboard tweaks.") { submenu in
+        submenuItem(title: "Keyboard") { submenu in
             submenu.addItem(toggleMenuItem(
-                title: "Backspace to Trash",
+                title: "Backspace Deletes Files",
                 action: #selector(toggleDeleteKey),
-                state: settings.deleteKeyEnabled,
-                toolTip: "Maps Backspace/Delete to Finder's Move to Trash command."
+                state: settings.deleteKeyEnabled
             ))
-            submenu.addItem(disabledItem(
-                shortMenuTitle(keyboardStatusTitle?() ?? "Keyboard Tap: Stopped"),
-                toolTip: "Shows whether the keyboard listener is currently active."
-            ))
-        }
-    }
-
-    private func permissionsMenuItem() -> NSMenuItem {
-        submenuItem(title: "Permissions", toolTip: "Check Finder extension and privacy permissions.") { submenu in
-            let finderExtensionItem = NSMenuItem(
-                title: finderExtensionStatusTitle(),
-                action: #selector(showFinderExtensionManagement),
-                keyEquivalent: ""
-            )
-            finderExtensionItem.target = self
-            finderExtensionItem.toolTip = "Open the macOS Finder Extension management screen."
-            submenu.addItem(finderExtensionItem)
-
             submenu.addItem(.separator())
-            submenu.addItem(permissionActionItem(
-                grantedTitle: "Accessibility: Granted",
-                requestTitle: "Request Accessibility",
-                isGranted: KeyboardDeleteController.isAccessibilityTrusted,
-                action: #selector(requestAccessibilityPermission),
-                toolTip: "Required for fallback menus and keyboard focus checks."
+            submenu.addItem(toggleMenuItem(
+                title: "Cut & Paste Files (⌘X / ⌘V)",
+                action: #selector(toggleCutFiles),
+                state: settings.cutFilesEnabled
             ))
-            submenu.addItem(permissionActionItem(
-                grantedTitle: "Input Monitoring: Granted",
-                requestTitle: "Request Input Monitoring",
-                isGranted: KeyboardDeleteController.canListenToInputEvents,
-                action: #selector(requestInputEventPermission),
-                toolTip: "Required for the Backspace/Delete keyboard tweak."
-            ))
-
             submenu.addItem(.separator())
-            let refreshItem = NSMenuItem(title: "Refresh Status", action: #selector(refreshStatus), keyEquivalent: "")
-            refreshItem.target = self
-            refreshItem.toolTip = "Refresh permission and controller status."
-            submenu.addItem(refreshItem)
-        }
-    }
-
-    private func finderActionOrderMenuItem() -> NSMenuItem {
-        submenuItem(title: "Menu Order", toolTip: "Reorder Finder right-click actions.") { submenu in
-            let snapshot = settings.currentSnapshot
-
-            for (index, action) in settings.finderActionOrder.enumerated() {
-                let fullActionTitle = "\(index + 1). \(action.title(settings: snapshot))"
-                let actionTitle = shortMenuTitle(fullActionTitle)
-                let actionItem = submenuItem(title: actionTitle, toolTip: fullActionTitle) { actionMenu in
-                    let moveUpItem = finderActionMoveItem(
-                        title: "Move Up",
-                        action: action,
-                        selector: #selector(moveFinderActionUp(_:)),
-                        toolTip: "Move \(action.title(settings: snapshot)) earlier in the Finder menu."
-                    )
-                    moveUpItem.isEnabled = index > 0
-                    actionMenu.addItem(moveUpItem)
-
-                    let moveDownItem = finderActionMoveItem(
-                        title: "Move Down",
-                        action: action,
-                        selector: #selector(moveFinderActionDown(_:)),
-                        toolTip: "Move \(action.title(settings: snapshot)) later in the Finder menu."
-                    )
-                    moveDownItem.isEnabled = index < settings.finderActionOrder.count - 1
-                    actionMenu.addItem(moveDownItem)
-                }
-                submenu.addItem(actionItem)
+            submenu.addItem(toggleMenuItem(
+                title: "Paste Clipboard as File",
+                action: #selector(toggleClipboardToFile),
+                state: settings.clipboardToFileEnabled
+            ))
+            if settings.clipboardToFileEnabled {
+                submenu.addItem(subToggleMenuItem(
+                    title: "Images",
+                    action: #selector(togglePasteImageAsFile),
+                    state: settings.pasteImageAsFile
+                ))
+                submenu.addItem(subToggleMenuItem(
+                    title: "Text",
+                    action: #selector(togglePasteTextAsFile),
+                    state: settings.pasteTextAsFile
+                ))
             }
-
-            submenu.addItem(.separator())
-            let resetItem = NSMenuItem(title: "Reset Order", action: #selector(resetFinderActionOrder), keyEquivalent: "")
-            resetItem.target = self
-            resetItem.toolTip = "Restore the default Finder action order."
-            submenu.addItem(resetItem)
         }
     }
 
-    private func toggleMenuItem(title: String, action: Selector, state: Bool, toolTip: String? = nil) -> NSMenuItem {
+    private func toggleMenuItem(title: String, action: Selector, state: Bool) -> NSMenuItem {
         let item = NSMenuItem(title: title, action: action, keyEquivalent: "")
         item.target = self
         item.state = state ? .on : .off
-        item.toolTip = toolTip
         return item
     }
 
-    private func submenuItem(title: String, toolTip: String? = nil, build: (NSMenu) -> Void) -> NSMenuItem {
+    /// A toggle rendered as a sub-option (indented) of the row above it.
+    private func subToggleMenuItem(title: String, action: Selector, state: Bool) -> NSMenuItem {
+        let item = toggleMenuItem(title: title, action: action, state: state)
+        item.indentationLevel = 1
+        return item
+    }
+
+    private func submenuItem(title: String, build: (NSMenu) -> Void) -> NSMenuItem {
         let item = NSMenuItem(title: title, action: nil, keyEquivalent: "")
         let submenu = NSMenu()
         build(submenu)
         item.submenu = submenu
-        item.toolTip = toolTip
         return item
     }
 
-    private func disabledItem(_ title: String, toolTip: String? = nil) -> NSMenuItem {
+    private func disabledItem(_ title: String) -> NSMenuItem {
         let item = NSMenuItem(title: title, action: nil, keyEquivalent: "")
         item.isEnabled = false
-        item.toolTip = toolTip
         return item
     }
 
-    private func permissionActionItem(
-        grantedTitle: String,
-        requestTitle: String,
-        isGranted: Bool,
-        action: Selector,
-        toolTip: String
-    ) -> NSMenuItem {
-        if isGranted {
-            return disabledItem(grantedTitle, toolTip: toolTip)
+    /// The status line. When something needs the user to act (a missing Finder
+    /// extension or permission — both now resolved in Settings), the line becomes
+    /// clickable and opens Settings; otherwise it's an informational row.
+    private func statusSummaryItem() -> NSMenuItem {
+        let status = currentStatus()
+        guard status.needsAttention else {
+            return disabledItem(status.title)
         }
 
-        let item = NSMenuItem(title: requestTitle, action: action, keyEquivalent: "")
+        let item = NSMenuItem(title: status.title, action: #selector(openSettings), keyEquivalent: "")
         item.target = self
-        item.toolTip = toolTip
+        item.toolTip = "Open Settings to resolve."
         return item
     }
 
-    private func finderActionMoveItem(
-        title: String,
-        action: FinderMenuAction,
-        selector: Selector,
-        toolTip: String
-    ) -> NSMenuItem {
-        let item = NSMenuItem(title: title, action: selector, keyEquivalent: "")
-        item.target = self
-        item.representedObject = action.rawValue
-        item.toolTip = toolTip
-        return item
-    }
-
-    private func statusSummaryTitle() -> String {
-        guard settings.masterEnabled else {
-            return "Paused"
-        }
-
-        if !FIFinderSyncController.isExtensionEnabled {
-            return "Needs Finder Extension"
-        }
-
-        if !KeyboardDeleteController.isAccessibilityTrusted || !KeyboardDeleteController.canListenToInputEvents {
-            return "Some permissions needed"
-        }
-
-        return "Ready"
-    }
-
-    private func finderExtensionStatusTitle() -> String {
-        FIFinderSyncController.isExtensionEnabled
-            ? "Finder Extension: Enabled"
-            : "Enable Finder Extension"
-    }
-
-    private func shortMenuTitle(_ title: String, maxLength: Int = 30) -> String {
-        guard title.count > maxLength, maxLength > 3 else { return title }
-        return String(title.prefix(maxLength - 3)) + "..."
+    private func currentStatus() -> StatusSummary {
+        guard settings.masterEnabled else { return .paused }
+        if !FIFinderSyncController.isExtensionEnabled { return .needsFinderExtension }
+        if !Permissions.isAccessibilityTrusted || !Permissions.canListenToInputEvents { return .permissionsNeeded }
+        return .ready
     }
 
     @objc private func toggleMasterEnabled() {
@@ -320,65 +201,28 @@ final class StatusMenuController: NSObject {
         rebuildMenu()
     }
 
-    @objc private func toggleOpenContainingFolderForFiles() {
-        settings.openContainingFolderForFiles.toggle()
-        rebuildMenu()
-    }
-
     @objc private func toggleDeleteKey() {
         settings.deleteKeyEnabled.toggle()
         rebuildMenu()
     }
 
-    @objc private func moveFinderActionUp(_ sender: NSMenuItem) {
-        moveFinderAction(sender, by: -1)
-    }
-
-    @objc private func moveFinderActionDown(_ sender: NSMenuItem) {
-        moveFinderAction(sender, by: 1)
-    }
-
-    @objc private func resetFinderActionOrder() {
-        settings.resetFinderActionOrder()
+    @objc private func toggleCutFiles() {
+        settings.cutFilesEnabled.toggle()
         rebuildMenu()
     }
 
-    private func moveFinderAction(_ sender: NSMenuItem, by offset: Int) {
-        guard let rawValue = sender.representedObject as? String,
-              let action = FinderMenuAction(rawValue: rawValue)
-        else {
-            return
-        }
-
-        settings.moveFinderAction(action, by: offset)
+    @objc private func toggleClipboardToFile() {
+        settings.clipboardToFileEnabled.toggle()
         rebuildMenu()
     }
 
-    @objc private func chooseIDE() {
-        let panel = NSOpenPanel()
-        panel.title = "Choose IDE"
-        panel.message = "Choose the app that should open Finder items."
-        panel.allowedContentTypes = [.application]
-        panel.allowsMultipleSelection = false
-        panel.canChooseDirectories = false
-        panel.canChooseFiles = true
-
-        guard panel.runModal() == .OK, let url = panel.url else { return }
-        settings.chooseIDEApplication(url)
+    @objc private func togglePasteImageAsFile() {
+        settings.pasteImageAsFile.toggle()
         rebuildMenu()
     }
 
-    @objc private func chooseTerminal() {
-        let panel = NSOpenPanel()
-        panel.title = "Choose Terminal"
-        panel.message = "Choose the terminal app that should open Finder folders."
-        panel.allowedContentTypes = [.application]
-        panel.allowsMultipleSelection = false
-        panel.canChooseDirectories = false
-        panel.canChooseFiles = true
-
-        guard panel.runModal() == .OK, let url = panel.url else { return }
-        settings.chooseTerminalApplication(url)
+    @objc private func togglePasteTextAsFile() {
+        settings.pasteTextAsFile.toggle()
         rebuildMenu()
     }
 
@@ -386,29 +230,37 @@ final class StatusMenuController: NSObject {
         showSettings?()
     }
 
-    @objc private func requestAccessibilityPermission() {
-        KeyboardDeleteController.requestAccessibilityPermission()
-        refreshControllers?()
-        rebuildMenu()
-    }
-
-    @objc private func requestInputEventPermission() {
-        KeyboardDeleteController.requestInputEventPermission()
-        refreshControllers?()
-        rebuildMenu()
-    }
-
-    @objc private func showFinderExtensionManagement() {
-        FIFinderSyncController.showExtensionManagementInterface()
-        rebuildMenu()
-    }
-
-    @objc private func refreshStatus() {
-        refreshControllers?()
-        rebuildMenu()
-    }
-
     @objc private func quit() {
         NSApp.terminate(nil)
+    }
+}
+
+private enum StatusSummary {
+    case paused
+    case needsFinderExtension
+    case permissionsNeeded
+    case ready
+
+    var title: String {
+        switch self {
+        case .paused:
+            return "Paused"
+        case .needsFinderExtension:
+            return "Needs Finder Extension"
+        case .permissionsNeeded:
+            return "Some permissions needed"
+        case .ready:
+            return "Ready"
+        }
+    }
+
+    /// Whether the user must act (in Settings) to reach a working state.
+    var needsAttention: Bool {
+        switch self {
+        case .needsFinderExtension, .permissionsNeeded:
+            return true
+        case .paused, .ready:
+            return false
+        }
     }
 }

@@ -6,6 +6,29 @@ final class FinderSync: FIFinderSync {
     private let defaults = SharedDefaults.makeUserDefaults()
     private let logger = Logger(subsystem: "com.noah.MacTweaks", category: "FinderSync")
 
+    // Builds and runs the action menu. Context is resolved lazily at click time
+    // (`resolvedContext`), so menu items gate on `.lazy` (app-dependency only).
+    private lazy var actionMenu: FinderActionMenu = {
+        let defaults = self.defaults
+        return FinderActionMenu(
+            snapshot: { SettingsSnapshot(defaults: defaults) },
+            resolveContext: { [weak self] action, sender, snapshot in
+                self?.resolvedContext(for: action, sender: sender, settings: snapshot)
+            },
+            sink: { [weak self] outcome in
+                guard let self else { return }
+                switch outcome.result {
+                case .success(let executionResult):
+                    self.diagnosticLog("action succeeded \(executionResult.diagnosticSummary) \(outcome.context.diagnosticSummary)")
+                case .failure(let error):
+                    self.logger.error("Finder Sync action failed: \(error.localizedDescription, privacy: .public)")
+                    NSLog("Mac Tweaks FinderSync action failed: \(error.localizedDescription) \(outcome.context.diagnosticSummary)")
+                    NSSound.beep()
+                }
+            }
+        )
+    }()
+
     override init() {
         super.init()
         diagnosticLog("initialized")
@@ -60,17 +83,7 @@ final class FinderSync: FIFinderSync {
             selectedURLs: selectedURLs,
             settings: settings
         )
-        let menu = NSMenu(title: "")
-        menu.autoenablesItems = false
-
-        for action in FinderMenuAction.enabledActions(settings: settings) {
-            let item = NSMenuItem(title: action.title(settings: settings), action: selector(for: action), keyEquivalent: "")
-            item.target = self
-            item.representedObject = context
-            item.isEnabled = isEnabledAtMenuBuild(action, settings: settings)
-            menu.addItem(item)
-        }
-
+        let menu = actionMenu.buildMenu(for: context, snapshot: settings, resolution: .lazy)
         return menu.items.isEmpty ? nil : menu
     }
 
@@ -80,65 +93,6 @@ final class FinderSync: FIFinderSync {
 
     @objc private func volumeTopologyChanged() {
         refreshMonitoredFolders()
-    }
-
-    @objc private func createNewFileHere(_ sender: NSMenuItem) {
-        execute(.createNewFileHere, sender: sender)
-    }
-
-    @objc private func openInIDE(_ sender: NSMenuItem) {
-        execute(.openInIDE, sender: sender)
-    }
-
-    @objc private func copyPath(_ sender: NSMenuItem) {
-        execute(.copyPath, sender: sender)
-    }
-
-    @objc private func openTerminalHere(_ sender: NSMenuItem) {
-        execute(.openTerminalHere, sender: sender)
-    }
-
-    private func selector(for action: FinderMenuAction) -> Selector {
-        switch action {
-        case .createNewFileHere:
-            return #selector(createNewFileHere(_:))
-        case .openInIDE:
-            return #selector(openInIDE(_:))
-        case .copyPath:
-            return #selector(copyPath(_:))
-        case .openTerminalHere:
-            return #selector(openTerminalHere(_:))
-        }
-    }
-
-    private func isEnabledAtMenuBuild(_ action: FinderMenuAction, settings: SettingsSnapshot) -> Bool {
-        switch action {
-        case .createNewFileHere, .copyPath:
-            return true
-        case .openInIDE:
-            return settings.ideApplicationURL != nil
-        case .openTerminalHere:
-            return settings.terminalApplicationURL != nil
-        }
-    }
-
-    private func execute(_ action: FinderMenuAction, sender: NSMenuItem) {
-        let settings = SettingsSnapshot(defaults: defaults)
-        guard let context = resolvedContext(for: action, sender: sender, settings: settings) else {
-            diagnosticLog("action missing saved context action=\(action.diagnosticName)")
-            NSSound.beep()
-            return
-        }
-
-        let result = FinderMenuActionExecutor.execute(action, context: context, settings: settings)
-        switch result {
-        case .success(let executionResult):
-            diagnosticLog("action succeeded \(executionResult.diagnosticSummary) \(context.diagnosticSummary)")
-        case .failure(let error):
-            logger.error("Finder Sync action failed: \(error.localizedDescription, privacy: .public)")
-            NSLog("Mac Tweaks FinderSync action failed: \(error.localizedDescription) \(context.diagnosticSummary)")
-            NSSound.beep()
-        }
     }
 
     private func resolvedContext(

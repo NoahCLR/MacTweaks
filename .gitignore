@@ -10,3 +10,7 @@ xcuserdata/
 # Local agent instructions (not published)
 CLAUDE.md
 AGENTS.md
+docs/agents/
+
+# Local planning / issue-tracker working area (not published)
+.scratch/

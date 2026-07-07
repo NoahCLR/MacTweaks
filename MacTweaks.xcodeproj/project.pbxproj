@@ -16,20 +16,46 @@
 		000000000000000000000106 /* LaunchAtLoginController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000206 /* LaunchAtLoginController.swift */; };
 		000000000000000000000119 /* FinderServiceProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000217 /* FinderServiceProvider.swift */; };
 		000000000000000000000120 /* FinderContextMenuFallbackController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000218 /* FinderContextMenuFallbackController.swift */; };
+		000000000000000000000124 /* FinderClipboardController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000221 /* FinderClipboardController.swift */; };
+		000000000000000000000151 /* ClipboardPayload.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000247 /* ClipboardPayload.swift */; };
+		000000000000000000000152 /* ClipboardPayload.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000247 /* ClipboardPayload.swift */; };
+		000000000000000000000153 /* ClipboardPayloadTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000248 /* ClipboardPayloadTests.swift */; };
+		000000000000000000000154 /* FinderInputContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000222 /* FinderInputContext.swift */; };
+		000000000000000000000155 /* FinderInputContextTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000249 /* FinderInputContextTests.swift */; };
+		000000000000000000000156 /* FinderActionMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000250 /* FinderActionMenu.swift */; };
+		000000000000000000000157 /* FinderActionMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000250 /* FinderActionMenu.swift */; };
+		000000000000000000000158 /* FinderActionMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000250 /* FinderActionMenu.swift */; };
+		000000000000000000000159 /* FinderActionMenuTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000251 /* FinderActionMenuTests.swift */; };
+		000000000000000000000160 /* TapGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000252 /* TapGate.swift */; };
+		000000000000000000000161 /* TapGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000252 /* TapGate.swift */; };
+		000000000000000000000162 /* TapGateReconcile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000253 /* TapGateReconcile.swift */; };
+		000000000000000000000163 /* TapGateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000254 /* TapGateTests.swift */; };
+		000000000000000000000144 /* EventTap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000242 /* EventTap.swift */; };
+		000000000000000000000149 /* Permissions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000245 /* Permissions.swift */; };
+		000000000000000000000150 /* TweakControllers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000246 /* TweakControllers.swift */; };
+		000000000000000000000125 /* FinderInputContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000222 /* FinderInputContext.swift */; };
 		000000000000000000000121 /* FinderMenuAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000219 /* FinderMenuAction.swift */; };
 		000000000000000000000122 /* FinderMenuAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000219 /* FinderMenuAction.swift */; };
 		000000000000000000000123 /* FinderMenuAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000219 /* FinderMenuAction.swift */; };
 		000000000000000000000107 /* SettingsKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000207 /* SettingsKeys.swift */; };
+		000000000000000000000145 /* SettingsSchema.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000243 /* SettingsSchema.swift */; };
 		000000000000000000000108 /* SharedSettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000208 /* SharedSettingsStore.swift */; };
 		000000000000000000000109 /* FinderActionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000209 /* FinderActionService.swift */; };
+		000000000000000000000140 /* EventDecisions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000240 /* EventDecisions.swift */; };
 		000000000000000000000110 /* FinderSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000210 /* FinderSync.swift */; };
 		000000000000000000000111 /* SettingsKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000207 /* SettingsKeys.swift */; };
+		000000000000000000000146 /* SettingsSchema.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000243 /* SettingsSchema.swift */; };
 		000000000000000000000112 /* SharedSettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000208 /* SharedSettingsStore.swift */; };
 		000000000000000000000113 /* FinderActionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000209 /* FinderActionService.swift */; };
+		000000000000000000000141 /* EventDecisions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000240 /* EventDecisions.swift */; };
 		000000000000000000000114 /* FinderActionServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000211 /* FinderActionServiceTests.swift */; };
+		000000000000000000000143 /* EventDecisionsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000241 /* EventDecisionsTests.swift */; };
 		000000000000000000000115 /* SettingsKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000207 /* SettingsKeys.swift */; };
+		000000000000000000000147 /* SettingsSchema.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000243 /* SettingsSchema.swift */; };
+		000000000000000000000148 /* SettingsSchemaTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000244 /* SettingsSchemaTests.swift */; };
 		000000000000000000000116 /* SharedSettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000208 /* SharedSettingsStore.swift */; };
 		000000000000000000000117 /* FinderActionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000209 /* FinderActionService.swift */; };
+		000000000000000000000142 /* EventDecisions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000240 /* EventDecisions.swift */; };
 		000000000000000000000118 /* MacTweaksFinderExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 000000000000000000000302 /* MacTweaksFinderExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
@@ -72,11 +98,15 @@
 		000000000000000000000205 /* KeyboardDeleteController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardDeleteController.swift; sourceTree = "<group>"; };
 		000000000000000000000206 /* LaunchAtLoginController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchAtLoginController.swift; sourceTree = "<group>"; };
 		000000000000000000000207 /* SettingsKeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsKeys.swift; sourceTree = "<group>"; };
+		000000000000000000000243 /* SettingsSchema.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsSchema.swift; sourceTree = "<group>"; };
+		000000000000000000000244 /* SettingsSchemaTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsSchemaTests.swift; sourceTree = "<group>"; };
 		000000000000000000000208 /* SharedSettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedSettingsStore.swift; sourceTree = "<group>"; };
 		000000000000000000000209 /* FinderActionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinderActionService.swift; sourceTree = "<group>"; };
+		000000000000000000000240 /* EventDecisions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventDecisions.swift; sourceTree = "<group>"; };
 		000000000000000000000219 /* FinderMenuAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinderMenuAction.swift; sourceTree = "<group>"; };
 		000000000000000000000210 /* FinderSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinderSync.swift; sourceTree = "<group>"; };
 		000000000000000000000211 /* FinderActionServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinderActionServiceTests.swift; sourceTree = "<group>"; };
+		000000000000000000000241 /* EventDecisionsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventDecisionsTests.swift; sourceTree = "<group>"; };
 		000000000000000000000212 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		000000000000000000000213 /* MacTweaks.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MacTweaks.entitlements; sourceTree = "<group>"; };
 		000000000000000000000220 /* AppIcon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = AppIcon.icns; sourceTree = "<group>"; };
@@ -85,6 +115,19 @@
 		000000000000000000000216 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		000000000000000000000217 /* FinderServiceProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinderServiceProvider.swift; sourceTree = "<group>"; };
 		000000000000000000000218 /* FinderContextMenuFallbackController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinderContextMenuFallbackController.swift; sourceTree = "<group>"; };
+		000000000000000000000221 /* FinderClipboardController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinderClipboardController.swift; sourceTree = "<group>"; };
+		000000000000000000000247 /* ClipboardPayload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardPayload.swift; sourceTree = "<group>"; };
+		000000000000000000000248 /* ClipboardPayloadTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardPayloadTests.swift; sourceTree = "<group>"; };
+		000000000000000000000249 /* FinderInputContextTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinderInputContextTests.swift; sourceTree = "<group>"; };
+		000000000000000000000250 /* FinderActionMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinderActionMenu.swift; sourceTree = "<group>"; };
+		000000000000000000000251 /* FinderActionMenuTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinderActionMenuTests.swift; sourceTree = "<group>"; };
+		000000000000000000000252 /* TapGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TapGate.swift; sourceTree = "<group>"; };
+		000000000000000000000253 /* TapGateReconcile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TapGateReconcile.swift; sourceTree = "<group>"; };
+		000000000000000000000254 /* TapGateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TapGateTests.swift; sourceTree = "<group>"; };
+		000000000000000000000242 /* EventTap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventTap.swift; sourceTree = "<group>"; };
+		000000000000000000000245 /* Permissions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Permissions.swift; sourceTree = "<group>"; };
+		000000000000000000000246 /* TweakControllers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TweakControllers.swift; sourceTree = "<group>"; };
+		000000000000000000000222 /* FinderInputContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinderInputContext.swift; sourceTree = "<group>"; };
 		000000000000000000000301 /* Mac Tweaks.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Mac Tweaks.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		000000000000000000000302 /* MacTweaksFinderExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MacTweaksFinderExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		000000000000000000000303 /* MacTweaksTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MacTweaksTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -150,9 +193,13 @@
 			isa = PBXGroup;
 			children = (
 				000000000000000000000207 /* SettingsKeys.swift */,
+				000000000000000000000243 /* SettingsSchema.swift */,
 				000000000000000000000208 /* SharedSettingsStore.swift */,
 				000000000000000000000209 /* FinderActionService.swift */,
+				000000000000000000000240 /* EventDecisions.swift */,
 				000000000000000000000219 /* FinderMenuAction.swift */,
+				000000000000000000000250 /* FinderActionMenu.swift */,
+				000000000000000000000252 /* TapGate.swift */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -161,6 +208,12 @@
 			isa = PBXGroup;
 			children = (
 				000000000000000000000211 /* FinderActionServiceTests.swift */,
+				000000000000000000000241 /* EventDecisionsTests.swift */,
+				000000000000000000000244 /* SettingsSchemaTests.swift */,
+				000000000000000000000248 /* ClipboardPayloadTests.swift */,
+				000000000000000000000249 /* FinderInputContextTests.swift */,
+				000000000000000000000251 /* FinderActionMenuTests.swift */,
+				000000000000000000000254 /* TapGateTests.swift */,
 				000000000000000000000216 /* Info.plist */,
 			);
 			path = Tests;
@@ -201,6 +254,13 @@
 				000000000000000000000206 /* LaunchAtLoginController.swift */,
 				000000000000000000000217 /* FinderServiceProvider.swift */,
 				000000000000000000000218 /* FinderContextMenuFallbackController.swift */,
+				000000000000000000000221 /* FinderClipboardController.swift */,
+				000000000000000000000247 /* ClipboardPayload.swift */,
+				000000000000000000000242 /* EventTap.swift */,
+				000000000000000000000245 /* Permissions.swift */,
+				000000000000000000000246 /* TweakControllers.swift */,
+				000000000000000000000222 /* FinderInputContext.swift */,
+				000000000000000000000253 /* TapGateReconcile.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -345,10 +405,21 @@
 				000000000000000000000106 /* LaunchAtLoginController.swift in Sources */,
 				000000000000000000000119 /* FinderServiceProvider.swift in Sources */,
 				000000000000000000000120 /* FinderContextMenuFallbackController.swift in Sources */,
+				000000000000000000000124 /* FinderClipboardController.swift in Sources */,
+				000000000000000000000151 /* ClipboardPayload.swift in Sources */,
+				000000000000000000000144 /* EventTap.swift in Sources */,
+				000000000000000000000149 /* Permissions.swift in Sources */,
+				000000000000000000000150 /* TweakControllers.swift in Sources */,
+				000000000000000000000125 /* FinderInputContext.swift in Sources */,
 				000000000000000000000107 /* SettingsKeys.swift in Sources */,
+				000000000000000000000145 /* SettingsSchema.swift in Sources */,
 				000000000000000000000108 /* SharedSettingsStore.swift in Sources */,
 				000000000000000000000109 /* FinderActionService.swift in Sources */,
+				000000000000000000000140 /* EventDecisions.swift in Sources */,
 				000000000000000000000121 /* FinderMenuAction.swift in Sources */,
+				000000000000000000000156 /* FinderActionMenu.swift in Sources */,
+				000000000000000000000160 /* TapGate.swift in Sources */,
+				000000000000000000000162 /* TapGateReconcile.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -358,9 +429,12 @@
 			files = (
 				000000000000000000000110 /* FinderSync.swift in Sources */,
 				000000000000000000000111 /* SettingsKeys.swift in Sources */,
+				000000000000000000000146 /* SettingsSchema.swift in Sources */,
 				000000000000000000000112 /* SharedSettingsStore.swift in Sources */,
 				000000000000000000000113 /* FinderActionService.swift in Sources */,
+				000000000000000000000141 /* EventDecisions.swift in Sources */,
 				000000000000000000000122 /* FinderMenuAction.swift in Sources */,
+				000000000000000000000157 /* FinderActionMenu.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -369,10 +443,22 @@
 			buildActionMask = 2147483647;
 			files = (
 				000000000000000000000114 /* FinderActionServiceTests.swift in Sources */,
+				000000000000000000000143 /* EventDecisionsTests.swift in Sources */,
 				000000000000000000000115 /* SettingsKeys.swift in Sources */,
+				000000000000000000000147 /* SettingsSchema.swift in Sources */,
+				000000000000000000000148 /* SettingsSchemaTests.swift in Sources */,
+				000000000000000000000152 /* ClipboardPayload.swift in Sources */,
+				000000000000000000000153 /* ClipboardPayloadTests.swift in Sources */,
+				000000000000000000000154 /* FinderInputContext.swift in Sources */,
+				000000000000000000000155 /* FinderInputContextTests.swift in Sources */,
 				000000000000000000000116 /* SharedSettingsStore.swift in Sources */,
 				000000000000000000000117 /* FinderActionService.swift in Sources */,
+				000000000000000000000142 /* EventDecisions.swift in Sources */,
 				000000000000000000000123 /* FinderMenuAction.swift in Sources */,
+				000000000000000000000158 /* FinderActionMenu.swift in Sources */,
+				000000000000000000000159 /* FinderActionMenuTests.swift in Sources */,
+				000000000000000000000161 /* TapGate.swift in Sources */,
+				000000000000000000000163 /* TapGateTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

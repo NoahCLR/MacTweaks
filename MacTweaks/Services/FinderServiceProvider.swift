@@ -12,84 +12,46 @@ final class FinderServiceProvider: NSObject {
 
     @objc(createNewFileHere:userData:error:)
     func createNewFileHere(_ pasteboard: NSPasteboard, userData: String, serviceError: AutoreleasingUnsafeMutablePointer<NSString?>) {
-        let snapshot = settings.currentSnapshot
-        guard snapshot.masterEnabled, snapshot.createFileEnabled else { return }
-
-        let context = FinderMenuContext.services(selectedURLs: fileURLs(from: pasteboard), settings: snapshot)
-        guard context.createDirectory != nil else {
-            serviceError.pointee = FinderActionError.cannotResolveTargetDirectory.localizedDescription as NSString
-            return
-        }
-
-        let result = FinderMenuActionExecutor.execute(.createNewFileHere, context: context, settings: snapshot)
-        switch result {
-        case .success(let executionResult):
-            logger.info("Create New File service succeeded: \(executionResult.diagnosticSummary, privacy: .public) \(context.diagnosticSummary, privacy: .public)")
-        case .failure(let error):
-            logger.error("Create New File service failed: \(error.localizedDescription, privacy: .public)")
-            write(error, to: serviceError)
-        }
+        perform(.createNewFileHere, from: pasteboard, label: "Create New File", serviceError: serviceError) { $0.createFileEnabled }
     }
 
     @objc(openInIDE:userData:error:)
     func openInIDE(_ pasteboard: NSPasteboard, userData: String, serviceError: AutoreleasingUnsafeMutablePointer<NSString?>) {
-        let snapshot = settings.currentSnapshot
-        guard snapshot.masterEnabled, snapshot.openInIDEEnabled else { return }
-
-        let context = FinderMenuContext.services(selectedURLs: fileURLs(from: pasteboard), settings: snapshot)
-        guard context.openTarget != nil else {
-            serviceError.pointee = FinderActionError.cannotResolveTargetDirectory.localizedDescription as NSString
-            return
-        }
-
-        let result = FinderMenuActionExecutor.execute(.openInIDE, context: context, settings: snapshot)
-        switch result {
-        case .success(let executionResult):
-            logger.info("Open in IDE service succeeded: \(executionResult.diagnosticSummary, privacy: .public) \(context.diagnosticSummary, privacy: .public)")
-        case .failure(let error):
-            logger.error("Open in IDE service failed: \(error.localizedDescription, privacy: .public)")
-            write(error, to: serviceError)
-        }
+        perform(.openInIDE, from: pasteboard, label: "Open in IDE", serviceError: serviceError) { $0.openInIDEEnabled }
     }
 
     @objc(copyPath:userData:error:)
     func copyPath(_ pasteboard: NSPasteboard, userData: String, serviceError: AutoreleasingUnsafeMutablePointer<NSString?>) {
-        let snapshot = settings.currentSnapshot
-        guard snapshot.masterEnabled, snapshot.copyPathEnabled else { return }
-
-        let context = FinderMenuContext.services(selectedURLs: fileURLs(from: pasteboard), settings: snapshot)
-        guard !context.copyPathURLs.isEmpty else {
-            serviceError.pointee = FinderActionError.cannotResolveTargetDirectory.localizedDescription as NSString
-            return
-        }
-
-        let result = FinderMenuActionExecutor.execute(.copyPath, context: context, settings: snapshot)
-        switch result {
-        case .success(let executionResult):
-            logger.info("Copy Path service succeeded: \(executionResult.diagnosticSummary, privacy: .public) \(context.diagnosticSummary, privacy: .public)")
-        case .failure(let error):
-            logger.error("Copy Path service failed: \(error.localizedDescription, privacy: .public)")
-            write(error, to: serviceError)
-        }
+        perform(.copyPath, from: pasteboard, label: "Copy Path", serviceError: serviceError) { $0.copyPathEnabled }
     }
 
     @objc(openTerminalHere:userData:error:)
     func openTerminalHere(_ pasteboard: NSPasteboard, userData: String, serviceError: AutoreleasingUnsafeMutablePointer<NSString?>) {
+        perform(.openTerminalHere, from: pasteboard, label: "Open Terminal Here", serviceError: serviceError) { $0.openTerminalEnabled }
+    }
+
+    /// Shared tail for the four service entry points: gate, build the services
+    /// context from the pasteboard, run via `FinderActionMenu`, and report — logging
+    /// success or writing the failure to the service error pointer. The unresolved-
+    /// target case falls out of the executor's own guard (same `serviceError` string
+    /// as before).
+    private func perform(
+        _ action: FinderMenuAction,
+        from pasteboard: NSPasteboard,
+        label: String,
+        serviceError: AutoreleasingUnsafeMutablePointer<NSString?>,
+        isEnabled: (SettingsSnapshot) -> Bool
+    ) {
         let snapshot = settings.currentSnapshot
-        guard snapshot.masterEnabled, snapshot.openTerminalEnabled else { return }
+        guard snapshot.masterEnabled, isEnabled(snapshot) else { return }
 
         let context = FinderMenuContext.services(selectedURLs: fileURLs(from: pasteboard), settings: snapshot)
-        guard context.terminalDirectory != nil else {
-            serviceError.pointee = FinderActionError.cannotResolveTargetDirectory.localizedDescription as NSString
-            return
-        }
-
-        let result = FinderMenuActionExecutor.execute(.openTerminalHere, context: context, settings: snapshot)
-        switch result {
+        let outcome = FinderActionMenu.run(action, context: context, snapshot: snapshot)
+        switch outcome.result {
         case .success(let executionResult):
-            logger.info("Open Terminal Here service succeeded: \(executionResult.diagnosticSummary, privacy: .public) \(context.diagnosticSummary, privacy: .public)")
+            logger.info("\(label, privacy: .public) service succeeded: \(executionResult.diagnosticSummary, privacy: .public) \(context.diagnosticSummary, privacy: .public)")
         case .failure(let error):
-            logger.error("Open Terminal Here service failed: \(error.localizedDescription, privacy: .public)")
+            logger.error("\(label, privacy: .public) service failed: \(error.localizedDescription, privacy: .public)")
             write(error, to: serviceError)
         }
     }
