@@ -3,7 +3,7 @@ import os
 
 final class FinderServiceProvider: NSObject {
     private let settings: SharedSettingsStore
-    private let logger = Logger(subsystem: "com.noah.MacTweaks", category: "FinderServices")
+    private let logger = Logger(subsystem: "com.ncleroy.MacTweaks", category: "FinderServices")
 
     init(settings: SharedSettingsStore) {
         self.settings = settings

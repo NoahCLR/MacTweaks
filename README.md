@@ -1,23 +1,36 @@
 # Mac Tweaks
 
-Mac Tweaks is a native macOS menu bar utility for opt-in Finder and keyboard tweaks. It runs as an `LSUIElement` app, so it lives in the menu bar and never shows a Dock icon. Every tweak is off by default and can be toggled individually.
+Mac Tweaks is a lightweight macOS menu bar app that adds practical Finder shortcuts, clipboard tools, and screen OCR.
 
-## Tweaks
+It lives in the menu bar without adding a Dock icon, and every feature can be enabled or disabled independently.
 
-Finder right-click actions (shown in the context menu, with configurable order):
+## What it does
 
-- **Create New File Here** — creates an empty file in the folder you clicked
-- **Open in IDE** — opens the clicked folder or file's folder in your editor (defaults to Visual Studio Code when installed)
-- **Copy Path** — copies the full path(s) of the selection to the clipboard
-- **Open in Terminal** — opens your terminal in the clicked folder
+### Finder right-click actions
 
-Keyboard tweaks, scoped to Finder only:
+Add these actions to Finder's context menu and arrange them in your preferred order:
 
-- **Backspace/Delete moves the selection to Trash** (no ⌘ required)
-- **Paste clipboard as a file** — in a Finder window or on the Desktop, ⌘V turns raw clipboard data into a file in the current folder: a screenshot or copied image becomes a `.png` (or `.jpg` when copied as JPEG), and copied text becomes `.rtf`/`.txt`. Files are named like `Pasted Image 2026-07-07 at 14.30.05.png`. Copied *files* still paste normally, and ⌘V while renaming an item is left alone. Images take priority when the clipboard holds both an image and text; each type can be toggled off individually.
-- **Cut & paste files to move them (⌘X / ⌘V)** — Windows-style file moving: ⌘X marks the selected files, and the next plain ⌘V moves them into the current folder. The move is performed by Finder itself, so **⌘Z undoes it** and name conflicts, permissions, and cross-volume moves are handled the usual way. A ⌘C in between cancels the cut ("last cut-or-copy wins"), and ⌘X inside a rename or search field still cuts text normally.
+- **Create New File Here** — create an empty file in the folder you clicked.
+- **Open in IDE** — open the selected file or folder in your chosen editor.
+- **Copy Path** — copy the full path of one or more selected items.
+- **Open in Terminal** — open your terminal in the selected folder.
+
+### Finder keyboard shortcuts
+
+- **Backspace/Delete to Trash** — move the selected Finder items to Trash without holding ⌘.
+- **⌘X / ⌘V to move files** — use Windows-style cut and paste for files. Finder performs the move, so ⌘Z still undoes it.
+
+### Clipboard to file
+
+Press ⌘V in Finder or on the Desktop to save copied content directly into the current folder. Images become `.png` or `.jpg` files, rich text becomes `.rtf`, and plain text becomes `.txt`. Copied files continue to paste normally.
+
+### OCR to Clipboard
+
+Press a configurable shortcut, drag over any part of the screen, and Mac Tweaks copies the recognized text to your clipboard. OCR runs locally using Apple's Vision framework, and the temporary screenshot is deleted immediately after processing.
 
 ## Install
+
+Mac Tweaks requires **macOS 14 or later**.
 
 ### Homebrew
 
@@ -26,52 +39,81 @@ brew install NoahCLR/tap/mac-tweaks
 xattr -dr com.apple.quarantine "/Applications/Mac Tweaks.app"
 ```
 
-The `xattr` line is needed because Mac Tweaks is built without a paid Apple Developer account: it is signed but not notarized, so Gatekeeper blocks the first launch of a quarantined copy. If you'd rather not clear the quarantine flag, launch the app once, let macOS block it, then approve it under System Settings → Privacy & Security → **Open Anyway**. The same applies after `brew upgrade`.
+Mac Tweaks is signed but not notarized because it is built without a paid Apple Developer account. Gatekeeper therefore blocks the first launch of a quarantined copy. The `xattr` command clears that quarantine flag.
+
+Alternatively, launch the app once, let macOS block it, then approve it under System Settings → Privacy & Security → **Open Anyway**. The same step may be needed after `brew upgrade`.
 
 ### Build from source
 
-No paid Apple Developer Program membership required:
+No paid Apple Developer Program membership is required:
 
 ```sh
 ./Scripts/install-local.sh
 ```
 
-The script builds the app, signs it with a stable identity, installs it to `/Applications`, registers the Finder extension, and launches it. Signing uses a self-signed certificate named `Mac Tweaks Local Code Signing`, created automatically on first run. See [Development](#development) for details.
+The script builds Mac Tweaks, signs it with a stable local identity, installs it in `/Applications`, registers the Finder extension, and launches it. See [Development](#development) for signing details.
 
 ## First-run setup
 
-Launch **Mac Tweaks** (it appears in the menu bar), open **Settings** from its menu, and enable the tweaks you want. Depending on which tweaks you enable, macOS needs some one-time approvals:
+Launch Mac Tweaks, click its menu bar icon, and open **Settings**. The Permissions tab guides you to the one-time macOS approvals needed by the features you use.
 
-1. **Finder extension** (right-click actions): System Settings → General → Login Items & Extensions → Finder Extensions → enable **Mac Tweaks Finder Actions**.
-2. **Accessibility** (Backspace-to-Trash, Paste-as-file, and Cut & paste tweaks, plus the Option+right-click fallback menu): System Settings → Privacy & Security → Accessibility → enable **Mac Tweaks**.
-3. **Input Monitoring** (Backspace-to-Trash, Paste-as-file, and Cut & paste tweaks): System Settings → Privacy & Security → Input Monitoring → enable **Mac Tweaks**.
-4. **Finder automation**: the first time the delete, paste-as-file, or cut & paste tweak acts, macOS asks to allow Mac Tweaks to control Finder — click Allow.
+| Approval | Used by |
+| --- | --- |
+| **Finder Extension** | Finder right-click actions |
+| **Accessibility** | Finder keyboard and clipboard shortcuts, the compatibility menu, and the global OCR shortcut |
+| **Screen Recording** | Capturing the selected screen region for OCR only |
+| **Finder Automation** | Clipboard-to-file, cut/paste files, and the Option+right-click compatibility menu |
 
-The app's settings window shows the live permission status and links to the right System Settings panes.
+To enable the Finder extension manually, open System Settings → General → Login Items & Extensions → Finder Extensions and turn on **Mac Tweaks Finder Actions**. macOS asks for Finder Automation the first time one of the listed features reads Finder state; choose **Allow**.
 
-Updates installed with `brew upgrade` keep these grants: releases are always signed with the same identity, which is what macOS ties the permissions to.
+The Permissions tab does not request permissions automatically. Accessibility and Screen Recording are independent and can be granted in either order. Clicking **Continue** requests only that row; if macOS has already shown its prompt, the action changes to **Open Settings** so you can flip the switch directly. Input Monitoring is not required.
+
+Updates installed with `brew upgrade` keep these approvals because releases use the same stable signing identity.
+
+## Behavior details
+
+### Clipboard to file
+
+- Images take priority when the clipboard contains both an image and text.
+- PNG and JPEG data are preserved; other image formats are converted to PNG.
+- Image and text handling can be switched off separately.
+- Pasting copied files, or pasting while renaming or searching in Finder, is left to Finder.
+- New files receive timestamped names such as `Pasted Image 2026-07-07 at 14.30.05.png`.
+
+### Cut and paste files
+
+- A plain ⌘V moves files only after Mac Tweaks has seen a matching ⌘X.
+- Copying something else with ⌘C cancels the pending cut.
+- Finder handles undo, name conflicts, permissions, and moves between volumes.
+- ⌘X in a rename or search field continues to cut text normally.
+
+### Finder menu compatibility
+
+The Finder Sync extension provides the normal right-click menu. An optional **Option+right-click compatibility menu** provides the same actions in Finder locations where extensions are unreliable.
 
 ## Development
 
 Open `MacTweaks.xcodeproj` in Xcode and run the `MacTweaks` scheme, or use the command line:
 
 ```sh
-# Build (no signing needed for verification)
+# Build without signing
 xcodebuild -project MacTweaks.xcodeproj -scheme MacTweaks -configuration Debug -destination 'generic/platform=macOS' CODE_SIGNING_ALLOWED=NO build
 
 # Run tests
 xcodebuild -project MacTweaks.xcodeproj -scheme MacTweaks -configuration Debug -destination 'platform=macOS' CODE_SIGNING_ALLOWED=NO test
 ```
 
-Targets: `Mac Tweaks` (app), `MacTweaksFinderExtension` (Finder Sync extension embedded in the app), `MacTweaksTests`.
+Targets: `Mac Tweaks` (app), `MacTweaksFinderExtension` (embedded Finder Sync extension), and `MacTweaksTests`.
 
 ### Local install and signing
 
-`./Scripts/install-local.sh` installs a local build to `/Applications`. A *stable* signing identity matters: re-signing with a different identity resets the app's Accessibility/Input Monitoring permissions. The script signs with a self-signed certificate (`Mac Tweaks Local Code Signing`) that it creates once and reuses for every build — this also keeps personal Apple ID details out of the signature. To sign with a different identity instead (for example an `Apple Development` certificate), set `MAC_TWEAKS_SIGNING_IDENTITY` to its exact name; verify available identities with `security find-identity -v -p codesigning`.
+`./Scripts/install-local.sh` installs a local build in `/Applications`. A stable signing identity matters because macOS ties Accessibility and Screen Recording approvals to the signature; changing it resets those approvals.
+
+The script creates and reuses a self-signed certificate named `Mac Tweaks Local Code Signing`. This also keeps personal Apple ID details out of the signature. To use another identity, set `MAC_TWEAKS_SIGNING_IDENTITY` to its exact name. List available identities with `security find-identity -v -p codesigning`.
 
 ### Releasing
 
-`./Scripts/release.sh` builds and signs a Release configuration, uploads the zip to a GitHub release, and updates the Homebrew cask in [NoahCLR/homebrew-tap](https://github.com/NoahCLR/homebrew-tap). It refuses to run on a dirty tree, runs the tests first, and derives the version from `CFBundleShortVersionString`.
+`./Scripts/release.sh` builds and signs a Release configuration, runs the tests, uploads the archive to a GitHub release, and updates the Homebrew cask in [NoahCLR/homebrew-tap](https://github.com/NoahCLR/homebrew-tap). It derives the version from `CFBundleShortVersionString` and refuses to run from a dirty worktree.
 
 ## License
 

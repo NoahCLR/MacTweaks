@@ -17,14 +17,16 @@ enum SettingsKey {
     static let ideApplicationPath = "ideApplicationPath"
     static let terminalApplicationPath = "terminalApplicationPath"
     static let finderActionOrder = "finderActionOrder"
+    static let ocrEnabled = "ocrEnabled"
+    static let ocrHotKey = "ocrHotKey"
     static let monitoredFolderPaths = "monitoredFolderPaths"
     static let launchAtLoginEnabled = "launchAtLoginEnabled"
 }
 
 enum SharedDefaults {
-    static let settingsSuiteName = "com.noah.MacTweaks.shared"
-    static let settingsDidChangeNotification = Notification.Name("com.noah.MacTweaks.settingsDidChange")
-    static let distributedSettingsDidChangeNotification = Notification.Name("com.noah.MacTweaks.distributedSettingsDidChange")
+    static let settingsSuiteName = "com.ncleroy.MacTweaks.shared"
+    static let settingsDidChangeNotification = Notification.Name("com.ncleroy.MacTweaks.settingsDidChange")
+    static let distributedSettingsDidChangeNotification = Notification.Name("com.ncleroy.MacTweaks.distributedSettingsDidChange")
     private static let settingsFileRelativePath = "Library/Application Support/Mac Tweaks/Settings.plist"
 
     static func makeUserDefaults() -> UserDefaults {

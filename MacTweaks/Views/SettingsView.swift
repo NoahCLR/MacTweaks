@@ -2,9 +2,18 @@ import SwiftUI
 import AppKit
 import FinderSync
 
+/// Lets code outside the view (the status-menu "needs attention" row) steer the
+/// Settings window to a specific tab. The view consumes and clears the request.
+final class SettingsRouter: ObservableObject {
+    @Published var requestedTab: SettingsTab?
+}
+
 struct SettingsView: View {
     @ObservedObject var settings: SharedSettingsStore
+    @ObservedObject var router: SettingsRouter
+    @ObservedObject var permissionOnboarding: PermissionOnboardingCoordinator
     let keyboardController: KeyboardDeleteController
+    let ocrController: ScreenCaptureOCRController
 
     @State private var launchAtLogin = LaunchAtLoginController.isEnabled
     @State private var launchAtLoginError: String?
@@ -22,8 +31,8 @@ struct SettingsView: View {
             Group {
                 switch selection {
                 case .general: generalTab
-                case .finderActions: finderActionsTab
-                case .keyboard: keyboardTab
+                case .finderTweaks: finderTweaksTab
+                case .clipboardTweaks: clipboardTweaksTab
                 case .permissions: permissionsTab
                 }
             }
@@ -33,10 +42,27 @@ struct SettingsView: View {
         .frame(minWidth: 820, minHeight: 620)
         .onAppear {
             refreshFinderExtensionStatus()
+            applyRequestedTab()
+            permissionOnboarding.refresh()
         }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             refreshFinderExtensionStatus()
+            permissionOnboarding.refresh()
         }
+        .onChange(of: router.requestedTab) { _, _ in
+            applyRequestedTab()
+        }
+        .onChange(of: selection) { _, newSelection in
+            if newSelection == .permissions {
+                permissionOnboarding.refresh()
+            }
+        }
+    }
+
+    private func applyRequestedTab() {
+        guard let tab = router.requestedTab else { return }
+        selection = tab
+        router.requestedTab = nil
     }
 
     // Custom segmented tab bar: full-width, equal-width tabs so the selection
@@ -77,7 +103,7 @@ struct SettingsView: View {
             settingsSection("App") {
                 toggleRow(
                     title: "Enable Mac Tweaks",
-                    detail: settings.masterEnabled ? "Finder actions and keyboard tweaks are active." : "All tweaks are paused.",
+                    detail: settings.masterEnabled ? "Finder and clipboard tweaks are active." : "All tweaks are paused.",
                     help: "Turns every Mac Tweaks Finder and keyboard feature on or off.",
                     isOn: $settings.masterEnabled
                 )
@@ -109,8 +135,12 @@ struct SettingsView: View {
         }
     }
 
-    private var finderActionsTab: some View {
+    private var finderTweaksTab: some View {
         settingsPage {
+            if finderKeyboardTweaksNeedPermission {
+                permissionNotice
+            }
+
             HStack(alignment: .top, spacing: 16) {
                 VStack(alignment: .leading, spacing: 16) {
                     settingsSection("Right-Click Actions") {
@@ -195,44 +225,42 @@ struct SettingsView: View {
 
                         monitoredFolderList
                     }
+
+                    settingsSection("Finder Keyboard") {
+                        toggleRow(
+                            title: "Backspace/Delete moves items to Trash",
+                            detail: "Works only while Finder is active.",
+                            help: "Maps Backspace/Delete to Finder's Move to Trash command after permissions are granted.",
+                            isOn: $settings.deleteKeyEnabled
+                        )
+                        rowDivider()
+                        statusRow(
+                            title: "Currently remapping Backspace",
+                            status: keyboardController.isRunning ? "Active" : "Inactive",
+                            tone: keyboardController.isRunning ? .green : .secondary,
+                            help: "Whether Backspace/Delete is being remapped to Move to Trash right now. Turns Active once the toggle above is on and Accessibility is granted (see the Permissions tab)."
+                        )
+                        rowDivider()
+                        toggleRow(
+                            title: "Cut & paste files with ⌘X / ⌘V (Windows-style move)",
+                            detail: "In Finder, ⌘X marks the selected files and the next ⌘V moves them into the current folder. ⌘Z undoes the move.",
+                            help: "⌘X copies the selection to the clipboard and marks it as a cut; a following plain ⌘V asks Finder to move those files. Finder performs the move, so it is undoable and handles permissions, name conflicts, and cross-volume moves. A ⌘C in between cancels the cut. ⌘X inside a rename field still cuts text normally.",
+                            isOn: $settings.cutFilesEnabled
+                        )
+                    }
                 }
                 .frame(maxWidth: .infinity, alignment: .topLeading)
             }
         }
     }
 
-    private var keyboardTab: some View {
+    private var clipboardTweaksTab: some View {
         settingsPage {
-            if keyboardTweaksNeedPermission {
+            if clipboardTweaksNeedPermission {
                 permissionNotice
             }
 
-            settingsSection("Finder Keyboard") {
-                toggleRow(
-                    title: "Backspace/Delete moves items to Trash",
-                    detail: "Works only while Finder is active.",
-                    help: "Maps Backspace/Delete to Finder's Move to Trash command after permissions are granted.",
-                    isOn: $settings.deleteKeyEnabled
-                )
-                rowDivider()
-                statusRow(
-                    title: "Currently remapping Backspace",
-                    status: keyboardController.isRunning ? "Active" : "Inactive",
-                    tone: keyboardController.isRunning ? .green : .secondary,
-                    help: "Whether Backspace/Delete is being remapped to Move to Trash right now. Turns Active once the toggle above is on and Accessibility + Input Monitoring are granted (see the Permissions tab)."
-                )
-            }
-
-            settingsSection("Cut & Paste Files") {
-                toggleRow(
-                    title: "Cut & paste files with ⌘X / ⌘V (Windows-style move)",
-                    detail: "In Finder, ⌘X marks the selected files and the next ⌘V moves them into the current folder. ⌘Z undoes the move.",
-                    help: "⌘X copies the selection to the clipboard and marks it as a cut; a following plain ⌘V asks Finder to move those files. Finder performs the move, so it is undoable and handles permissions, name conflicts, and cross-volume moves. A ⌘C in between cancels the cut. ⌘X inside a rename field still cuts text normally.",
-                    isOn: $settings.cutFilesEnabled
-                )
-            }
-
-            settingsSection("Clipboard") {
+            settingsSection("Paste Clipboard as File") {
                 toggleRow(
                     title: "Paste clipboard as a file",
                     detail: "In Finder, ⌘V turns clipboard data (like a screenshot) into a file in the current folder.",
@@ -256,16 +284,59 @@ struct SettingsView: View {
                     )
                 }
             }
+
+            settingsSection("OCR to Clipboard") {
+                toggleRow(
+                    title: "Copy text from a screen selection",
+                    detail: "Press the shortcut, drag to select any part of the screen, and the text in it is copied to the clipboard.",
+                    help: "Runs macOS's screen capture, recognizes text in the selection with the Vision framework, and puts it on the clipboard. Works over any app. Needs Accessibility and Screen Recording permission (see the Permissions tab).",
+                    isOn: $settings.ocrEnabled
+                )
+                if settings.ocrEnabled {
+                    rowDivider()
+                    shortcutRow
+                    rowDivider()
+                    statusRow(
+                        title: "Currently listening for the shortcut",
+                        status: ocrController.isRunning ? "Active" : "Inactive",
+                        tone: ocrController.isRunning ? .green : .secondary,
+                        help: "Whether the OCR shortcut is being watched right now. Turns Active once the toggle above is on and Accessibility is granted. Capturing the selection also needs Screen Recording."
+                    )
+                }
+            }
         }
     }
 
-    /// The keyboard/clipboard tweaks all rely on the two event-tap permissions;
-    /// show an inline pointer to the Permissions tab when a tweak is enabled but a
-    /// required permission is still missing (grant lives only on that tab).
-    private var keyboardTweaksNeedPermission: Bool {
-        let anyEnabled = settings.deleteKeyEnabled || settings.cutFilesEnabled || settings.clipboardToFileEnabled
-        let missing = !Permissions.isAccessibilityTrusted || !Permissions.canListenToInputEvents
-        return anyEnabled && missing
+    private var shortcutRow: some View {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Shortcut")
+                    .font(.body)
+                Text("Click the field, then press the key combination you want.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+            ShortcutRecorderField(hotKey: $settings.ocrHotKey)
+        }
+        .padding(.vertical, 10)
+        .frame(minHeight: 54)
+    }
+
+    /// The keyboard/clipboard tweaks all rely on Accessibility for their modifying
+    /// event taps. Each tab shows an inline pointer to the Permissions tab when one of *its*
+    /// tweaks is enabled but a required permission is still missing (grant lives
+    /// only on that tab).
+    private var finderKeyboardTweaksNeedPermission: Bool {
+        (settings.deleteKeyEnabled || settings.cutFilesEnabled) && eventTapPermissionMissing
+    }
+
+    private var clipboardTweaksNeedPermission: Bool {
+        (settings.clipboardToFileEnabled || settings.ocrEnabled) && eventTapPermissionMissing
+    }
+
+    private var eventTapPermissionMissing: Bool {
+        !permissionOnboarding.snapshot.accessibilityGranted
     }
 
     private var permissionNotice: some View {
@@ -275,7 +346,7 @@ struct SettingsView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text("Permissions required")
                     .font(.body.weight(.medium))
-                Text("These tweaks need Accessibility and Input Monitoring access to work.")
+                Text("These tweaks need Accessibility access to work.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -283,7 +354,7 @@ struct SettingsView: View {
             Button("Open Permissions") {
                 withAnimation(.easeOut(duration: 0.15)) { selection = .permissions }
             }
-            .help("Grant Accessibility and Input Monitoring on the Permissions tab.")
+            .help("Grant Accessibility on the Permissions tab.")
         }
         .padding(12)
         .background(Color.orange.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
@@ -295,6 +366,8 @@ struct SettingsView: View {
 
     private var permissionsTab: some View {
         settingsPage {
+            permissionSetupGuide
+
             settingsSection("Finder Extension") {
                 permissionRow(
                     title: "Finder Extension",
@@ -309,23 +382,127 @@ struct SettingsView: View {
             settingsSection("Privacy Permissions") {
                 permissionRow(
                     title: "Accessibility",
-                    status: Permissions.isAccessibilityTrusted ? "Granted" : "Required",
-                    tone: Permissions.isAccessibilityTrusted ? .green : .orange,
-                    buttonTitle: "Open Settings",
-                    help: "System privacy permission used by the fallback menu and keyboard tweak.",
-                    action: openAccessibilitySettings
+                    status: accessibilityStatus,
+                    tone: permissionOnboarding.snapshot.accessibilityGranted ? .green : .orange,
+                    buttonTitle: accessibilityButtonTitle,
+                    help: "Allows Mac Tweaks to observe and replace input events for its keyboard shortcuts and compatibility menu.",
+                    action: accessibilityButtonAction
                 )
                 rowDivider()
                 permissionRow(
-                    title: "Input Monitoring",
-                    status: Permissions.canListenToInputEvents ? "Granted" : "Required",
-                    tone: Permissions.canListenToInputEvents ? .green : .orange,
-                    buttonTitle: "Open Settings",
-                    help: "System privacy permission required for listening to Backspace/Delete.",
-                    action: openInputMonitoringSettings
+                    title: "Screen Recording",
+                    status: screenRecordingStatus,
+                    tone: screenRecordingTone,
+                    buttonTitle: screenRecordingButtonTitle,
+                    isEnabled: screenRecordingActionEnabled,
+                    help: "Allows OCR to Clipboard to capture the selected part of the screen. It is not requested while OCR is turned off.",
+                    action: screenRecordingButtonAction
                 )
             }
         }
+    }
+
+    private var permissionSetupGuide: some View {
+        settingsSection("Permission Setup") {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: privacyPermissionsReady ? "checkmark.shield.fill" : "lock.shield.fill")
+                    .font(.title3)
+                    .foregroundStyle(privacyPermissionsReady ? Color.green : Color.accentColor)
+                    .frame(width: 24)
+                VStack(alignment: .leading, spacing: 4) {
+                    if privacyPermissionsReady {
+                        Text("Required permissions are ready")
+                            .font(.body.weight(.semibold))
+                        Text(permissionReadyDetail)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Text("Choose permissions individually")
+                            .font(.body.weight(.semibold))
+                        Text("Each Continue button below asks macOS for that permission only. Accessibility and Screen Recording are independent, so you can grant them in either order. Returning here only refreshes their status.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                Spacer()
+            }
+            .padding(.vertical, 10)
+        }
+    }
+
+    private var privacyPermissionsReady: Bool {
+        permissionOnboarding.snapshot.accessibilityGranted
+            && (!settings.ocrEnabled || permissionOnboarding.snapshot.screenCaptureGranted)
+    }
+
+    private var permissionReadyDetail: String {
+        if settings.ocrEnabled {
+            return "Accessibility and Screen Recording are granted."
+        }
+        return "Accessibility is granted. Screen Recording is not needed while OCR to Clipboard is off."
+    }
+
+    private var accessibilityStatus: String {
+        if permissionOnboarding.snapshot.accessibilityGranted { return "Granted" }
+        return permissionOnboarding.hasRequested(.accessibility) ? "Enable in System Settings" : "Required"
+    }
+
+    private var accessibilityButtonTitle: String {
+        if permissionOnboarding.snapshot.accessibilityGranted
+            || permissionOnboarding.hasRequested(.accessibility) {
+            return "Open Settings"
+        }
+        return "Continue"
+    }
+
+    /// The closure is selected while the button is rendered. A queued click on a
+    /// stale Continue button can therefore only repeat `request` (which is a
+    /// coordinator no-op), never turn into Open Settings mid-click.
+    private var accessibilityButtonAction: () -> Void {
+        if permissionOnboarding.snapshot.accessibilityGranted
+            || permissionOnboarding.hasRequested(.accessibility) {
+            return { openAccessibilitySettings() }
+        }
+        return { permissionOnboarding.request(.accessibility) }
+    }
+
+    private var screenRecordingStatus: String {
+        if permissionOnboarding.snapshot.screenCaptureGranted { return "Granted" }
+        if !settings.ocrEnabled { return "Not needed while OCR is off" }
+        return permissionOnboarding.hasRequested(.screenRecording)
+            ? "Enable in System Settings"
+            : "Required for OCR to Clipboard"
+    }
+
+    private var screenRecordingTone: StatusTone {
+        if permissionOnboarding.snapshot.screenCaptureGranted { return .green }
+        return settings.ocrEnabled ? .orange : .secondary
+    }
+
+    private var screenRecordingButtonTitle: String {
+        if permissionOnboarding.snapshot.screenCaptureGranted { return "Open Settings" }
+        if !settings.ocrEnabled { return "Not Needed" }
+        if permissionOnboarding.hasRequested(.screenRecording) { return "Open Settings" }
+        return "Continue"
+    }
+
+    private var screenRecordingActionEnabled: Bool {
+        if permissionOnboarding.snapshot.screenCaptureGranted { return true }
+        return settings.ocrEnabled
+    }
+
+    private var screenRecordingButtonAction: () -> Void {
+        if permissionOnboarding.snapshot.screenCaptureGranted {
+            return { openScreenRecordingSettings() }
+        }
+        if !settings.ocrEnabled {
+            return {}
+        }
+        if permissionOnboarding.hasRequested(.screenRecording) {
+            return { openScreenRecordingSettings() }
+        }
+        return { requestScreenRecordingIfEligible() }
     }
 
     private func settingsPage<Content: View>(@ViewBuilder content: () -> Content) -> some View {
@@ -441,6 +618,7 @@ struct SettingsView: View {
         status: String,
         tone: StatusTone,
         buttonTitle: String,
+        isEnabled: Bool = true,
         help: String,
         action: @escaping () -> Void
     ) -> some View {
@@ -453,6 +631,7 @@ struct SettingsView: View {
             Spacer()
             Button(buttonTitle, action: action)
                 .frame(minWidth: 104, alignment: .trailing)
+                .disabled(!isEnabled)
                 .help(help)
         }
         .padding(.vertical, 10)
@@ -664,12 +843,18 @@ struct SettingsView: View {
         settings.removeMonitoredFolders(at: IndexSet(integer: index))
     }
 
+    private func requestScreenRecordingIfEligible() {
+        permissionOnboarding.refresh()
+        guard settings.ocrEnabled else { return }
+        permissionOnboarding.request(.screenRecording)
+    }
+
     private func openAccessibilitySettings() {
         openSystemSettings("x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")
     }
 
-    private func openInputMonitoringSettings() {
-        openSystemSettings("x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent")
+    private func openScreenRecordingSettings() {
+        openSystemSettings("x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture")
     }
 
     private func openExtensionsSettings() {
@@ -689,10 +874,10 @@ struct SettingsView: View {
     }
 }
 
-private enum SettingsTab: String, CaseIterable, Identifiable {
+enum SettingsTab: String, CaseIterable, Identifiable {
     case general
-    case finderActions
-    case keyboard
+    case finderTweaks
+    case clipboardTweaks
     case permissions
 
     var id: String { rawValue }
@@ -700,8 +885,8 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .general: return "General"
-        case .finderActions: return "Finder Actions"
-        case .keyboard: return "Keyboard & Clipboard"
+        case .finderTweaks: return "Finder Tweaks"
+        case .clipboardTweaks: return "Clipboard Tweaks"
         case .permissions: return "Permissions"
         }
     }
@@ -709,8 +894,8 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
     var symbol: String {
         switch self {
         case .general: return "switch.2"
-        case .finderActions: return "folder"
-        case .keyboard: return "keyboard"
+        case .finderTweaks: return "folder"
+        case .clipboardTweaks: return "doc.on.clipboard"
         case .permissions: return "lock.shield"
         }
     }

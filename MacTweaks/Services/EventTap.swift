@@ -10,12 +10,12 @@ import os
 /// Callers supply the events they care about and a handler; they never see the
 /// `tapDisabledBy*` lifecycle events (EventTap re-enables the tap and swallows
 /// them). This is the single home for the fragile Core Graphics ritual that the
-/// three tweak controllers used to each copy.
+/// tweak controllers used to each copy.
 final class EventTap {
     private let mask: CGEventMask
     private let place: CGEventTapPlacement
     private let handler: (CGEventType, CGEvent) -> Unmanaged<CGEvent>?
-    private let logger = Logger(subsystem: "com.noah.MacTweaks", category: "EventTap")
+    private let logger = Logger(subsystem: "com.ncleroy.MacTweaks", category: "EventTap")
 
     private var tap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?

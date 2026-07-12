@@ -11,6 +11,7 @@ protocol TweakController: AnyObject {
 extension KeyboardDeleteController: TweakController {}
 extension FinderClipboardController: TweakController {}
 extension FinderContextMenuFallbackController: TweakController {}
+extension ScreenCaptureOCRController: TweakController {}
 
 /// One handle for the fleet of tap controllers. `AppDelegate` decides *when* to
 /// refresh (settings changed, timer tick, permission change); the fleet owns the
@@ -20,6 +21,7 @@ final class TweakControllers {
     let keyboard: KeyboardDeleteController
     let clipboard: FinderClipboardController
     let contextMenuFallback: FinderContextMenuFallbackController
+    let screenOCR: ScreenCaptureOCRController
 
     private let all: [TweakController]
 
@@ -27,7 +29,8 @@ final class TweakControllers {
         keyboard = KeyboardDeleteController(settings: settings)
         clipboard = FinderClipboardController(settings: settings)
         contextMenuFallback = FinderContextMenuFallbackController(settings: settings)
-        all = [keyboard, clipboard, contextMenuFallback]
+        screenOCR = ScreenCaptureOCRController(settings: settings)
+        all = [keyboard, clipboard, contextMenuFallback, screenOCR]
     }
 
     func refreshAll() {

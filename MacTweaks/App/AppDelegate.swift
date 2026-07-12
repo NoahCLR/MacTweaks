@@ -5,14 +5,17 @@ import os
 import SwiftUI
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
-    private let logger = Logger(subsystem: "com.noah.MacTweaks", category: "AppDelegate")
+    private let logger = Logger(subsystem: "com.ncleroy.MacTweaks", category: "AppDelegate")
 
     let settings = SharedSettingsStore()
+    let permissionOnboarding = PermissionOnboardingCoordinator()
     lazy var controllers = TweakControllers(settings: settings)
     lazy var finderServiceProvider = FinderServiceProvider(settings: settings)
     private lazy var settingsWindowController = SettingsWindowController(
         settings: settings,
-        keyboardController: controllers.keyboard
+        permissionOnboarding: permissionOnboarding,
+        keyboardController: controllers.keyboard,
+        ocrController: controllers.screenOCR
     )
 
     private var statusMenuController: StatusMenuController?
@@ -26,7 +29,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSUpdateDynamicServices()
         registerFinderExtension()
         statusMenuController = StatusMenuController(settings: settings)
-        statusMenuController?.showSettings = { [weak self] in self?.showSettings() }
+        statusMenuController?.showSettings = { [weak self] tab in self?.showSettings(tab: tab) }
 
         controllers.refreshAll()
         startPermissionRefreshTimer()
@@ -45,9 +48,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         controllers.stopAll()
     }
 
-    private func showSettings() {
+    func applicationDidBecomeActive(_ notification: Notification) {
+        // Returning from a macOS prompt or System Settings only refreshes status.
+        // The next permission is always initiated by an explicit Continue click.
+        permissionOnboarding.refresh()
+    }
+
+    private func showSettings(tab: SettingsTab? = nil) {
         NSApp.activate(ignoringOtherApps: true)
-        settingsWindowController.show()
+        settingsWindowController.show(tab: tab)
     }
 
     private func registerFinderExtension() {
@@ -85,6 +94,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         permissionRefreshTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in
             guard let self else { return }
             self.controllers.refreshAll()
+            self.permissionOnboarding.refresh()
 
             let permissionState = self.currentPermissionState()
             if permissionState != self.lastPermissionState {
@@ -97,7 +107,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func currentPermissionState() -> PermissionState {
         PermissionState(
             accessibility: Permissions.isAccessibilityTrusted,
-            inputMonitoring: Permissions.canListenToInputEvents,
+            screenCapture: Permissions.canCaptureScreen,
             finderExtensionEnabled: FIFinderSyncController.isExtensionEnabled
         )
     }
@@ -108,21 +118,34 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 // the menu on the next poll.
 private struct PermissionState: Equatable {
     let accessibility: Bool
-    let inputMonitoring: Bool
+    let screenCapture: Bool
     let finderExtensionEnabled: Bool
 }
 
 private final class SettingsWindowController {
     private let settings: SharedSettingsStore
+    private let permissionOnboarding: PermissionOnboardingCoordinator
     private let keyboardController: KeyboardDeleteController
+    private let ocrController: ScreenCaptureOCRController
+    private let router = SettingsRouter()
     private var window: NSWindow?
 
-    init(settings: SharedSettingsStore, keyboardController: KeyboardDeleteController) {
+    init(
+        settings: SharedSettingsStore,
+        permissionOnboarding: PermissionOnboardingCoordinator,
+        keyboardController: KeyboardDeleteController,
+        ocrController: ScreenCaptureOCRController
+    ) {
         self.settings = settings
+        self.permissionOnboarding = permissionOnboarding
         self.keyboardController = keyboardController
+        self.ocrController = ocrController
     }
 
-    func show() {
+    func show(tab: SettingsTab? = nil) {
+        if let tab {
+            router.requestedTab = tab
+        }
         let window = window ?? makeWindow()
         self.window = window
         window.makeKeyAndOrderFront(nil)
@@ -130,7 +153,13 @@ private final class SettingsWindowController {
     }
 
     private func makeWindow() -> NSWindow {
-        let rootView = SettingsView(settings: settings, keyboardController: keyboardController)
+        let rootView = SettingsView(
+            settings: settings,
+            router: router,
+            permissionOnboarding: permissionOnboarding,
+            keyboardController: keyboardController,
+            ocrController: ocrController
+        )
             .frame(minWidth: 820, minHeight: 620)
 
         let window = NSWindow(contentViewController: NSHostingController(rootView: rootView))

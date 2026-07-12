@@ -1,24 +1,39 @@
 import AppKit
 import FinderSync
 
-final class StatusMenuController: NSObject {
-    var showSettings: (() -> Void)?
+final class StatusMenuController: NSObject, NSMenuDelegate {
+    /// Opens the Settings window; a non-nil tab jumps straight to it (the status
+    /// row targets Permissions), nil keeps whatever tab was last selected.
+    var showSettings: ((SettingsTab?) -> Void)?
 
     private let settings: SharedSettingsStore
     private let statusItem: NSStatusItem
+    private let menu = NSMenu()
 
     init(settings: SharedSettingsStore) {
         self.settings = settings
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         super.init()
 
+        // One long-lived menu, repopulated in menuNeedsUpdate just before every
+        // open — so the items (toggle states, the OCR shortcut in its title) can
+        // never show stale state, no matter when settings last changed.
+        menu.delegate = self
+        statusItem.menu = menu
         rebuildMenu()
+    }
+
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        populate(menu)
     }
 
     func rebuildMenu() {
         updateStatusItemAppearance()
+        populate(menu)
+    }
 
-        let menu = NSMenu()
+    private func populate(_ menu: NSMenu) {
+        menu.removeAllItems()
         menu.addItem(toggleMenuItem(
             title: "Enable Mac Tweaks",
             action: #selector(toggleMasterEnabled),
@@ -27,19 +42,23 @@ final class StatusMenuController: NSObject {
         menu.addItem(statusSummaryItem())
         menu.addItem(.separator())
 
-        menu.addItem(finderActionsMenuItem())
-        menu.addItem(keyboardMenuItem())
+        menu.addItem(finderTweaksMenuItem())
+        menu.addItem(clipboardTweaksMenuItem())
 
         menu.addItem(.separator())
+        // Both bottom items carry an explicit icon: macOS auto-decorates
+        // "Settings..." with a gear, which shifts icon-less siblings into the
+        // icon-alignment column and makes Quit look indented. Giving Quit its own
+        // symbol keeps the two rows aligned deliberately on every OS version.
         let settingsItem = NSMenuItem(title: "Settings...", action: #selector(openSettings), keyEquivalent: ",")
         settingsItem.target = self
+        settingsItem.image = NSImage(systemSymbolName: "gearshape", accessibilityDescription: "Settings")
         menu.addItem(settingsItem)
 
         let quitItem = NSMenuItem(title: "Quit Mac Tweaks", action: #selector(quit), keyEquivalent: "q")
         quitItem.target = self
+        quitItem.image = NSImage(systemSymbolName: "power", accessibilityDescription: "Quit")
         menu.addItem(quitItem)
-
-        statusItem.menu = menu
     }
 
     private func updateStatusItemAppearance() {
@@ -51,17 +70,24 @@ final class StatusMenuController: NSObject {
 
     // Menu-bar surfaces quick toggles only. Reordering actions, choosing default
     // apps, and granting permissions live in Settings (the "Settings..." item).
-    private func finderActionsMenuItem() -> NSMenuItem {
-        submenuItem(title: "Finder Actions") { submenu in
+    //
+    // Grouping is by what the tweak is about, not how it's delivered: Finder
+    // Tweaks changes how you work with files in Finder (right-click actions and
+    // the Finder-only keystrokes), Clipboard Tweaks is about clipboard content
+    // (materializing it as a file, filling it via OCR).
+    private func finderTweaksMenuItem() -> NSMenuItem {
+        submenuItem(title: "Finder Tweaks") { submenu in
             let snapshot = settings.currentSnapshot
 
-            // Follow the user's configured menu order (Settings → Finder Actions →
+            submenu.addItem(.sectionHeader(title: "Right-Click Actions"))
+            // Follow the user's configured menu order (Settings → Finder Tweaks →
             // Menu Order), the same array that drives the real Finder right-click menu.
             for action in settings.finderActionOrder {
                 submenu.addItem(finderActionToggleItem(action, snapshot: snapshot))
             }
-            submenu.addItem(.separator())
 
+            // The fallback toggle sits under the same header: it controls where
+            // those right-click actions appear, not a separate tweak.
             let fallbackItem = toggleMenuItem(
                 title: "Fallback Menu (⌥-Right-Click)",
                 action: #selector(toggleEnhancedFinderMenus),
@@ -69,6 +95,19 @@ final class StatusMenuController: NSObject {
             )
             fallbackItem.toolTip = "Shows Mac Tweaks actions on Option-right-click where the native Finder menu isn't available (e.g. the Desktop and cloud folders)."
             submenu.addItem(fallbackItem)
+            submenu.addItem(.separator())
+
+            submenu.addItem(.sectionHeader(title: "Keyboard"))
+            submenu.addItem(toggleMenuItem(
+                title: "Backspace Deletes Files",
+                action: #selector(toggleDeleteKey),
+                state: settings.deleteKeyEnabled
+            ))
+            submenu.addItem(toggleMenuItem(
+                title: "Cut & Paste Files (⌘X / ⌘V)",
+                action: #selector(toggleCutFiles),
+                state: settings.cutFilesEnabled
+            ))
         }
     }
 
@@ -101,20 +140,8 @@ final class StatusMenuController: NSObject {
         }
     }
 
-    private func keyboardMenuItem() -> NSMenuItem {
-        submenuItem(title: "Keyboard") { submenu in
-            submenu.addItem(toggleMenuItem(
-                title: "Backspace Deletes Files",
-                action: #selector(toggleDeleteKey),
-                state: settings.deleteKeyEnabled
-            ))
-            submenu.addItem(.separator())
-            submenu.addItem(toggleMenuItem(
-                title: "Cut & Paste Files (⌘X / ⌘V)",
-                action: #selector(toggleCutFiles),
-                state: settings.cutFilesEnabled
-            ))
-            submenu.addItem(.separator())
+    private func clipboardTweaksMenuItem() -> NSMenuItem {
+        submenuItem(title: "Clipboard Tweaks") { submenu in
             submenu.addItem(toggleMenuItem(
                 title: "Paste Clipboard as File",
                 action: #selector(toggleClipboardToFile),
@@ -132,6 +159,14 @@ final class StatusMenuController: NSObject {
                     state: settings.pasteTextAsFile
                 ))
             }
+            submenu.addItem(.separator())
+            let ocrItem = toggleMenuItem(
+                title: "OCR to Clipboard (\(settings.ocrHotKey.displayString))",
+                action: #selector(toggleOCR),
+                state: settings.ocrEnabled
+            )
+            ocrItem.toolTip = "Press the shortcut, drag to select part of the screen, and its text is copied to the clipboard. Change the shortcut in Settings."
+            submenu.addItem(ocrItem)
         }
     }
 
@@ -165,23 +200,27 @@ final class StatusMenuController: NSObject {
 
     /// The status line. When something needs the user to act (a missing Finder
     /// extension or permission — both now resolved in Settings), the line becomes
-    /// clickable and opens Settings; otherwise it's an informational row.
+    /// clickable and jumps straight to the Permissions tab; otherwise it's an
+    /// informational row. The explicit icon doubles as an override for the gear
+    /// macOS would otherwise auto-attach to a Settings-opening item.
     private func statusSummaryItem() -> NSMenuItem {
         let status = currentStatus()
         guard status.needsAttention else {
             return disabledItem(status.title)
         }
 
-        let item = NSMenuItem(title: status.title, action: #selector(openSettings), keyEquivalent: "")
+        let item = NSMenuItem(title: status.title, action: #selector(openPermissions), keyEquivalent: "")
         item.target = self
-        item.toolTip = "Open Settings to resolve."
+        item.image = NSImage(systemSymbolName: status.symbolName, accessibilityDescription: status.title)
+        item.toolTip = "Open the Permissions tab to resolve."
         return item
     }
 
     private func currentStatus() -> StatusSummary {
         guard settings.masterEnabled else { return .paused }
         if !FIFinderSyncController.isExtensionEnabled { return .needsFinderExtension }
-        if !Permissions.isAccessibilityTrusted || !Permissions.canListenToInputEvents { return .permissionsNeeded }
+        if !Permissions.isAccessibilityTrusted { return .permissionsNeeded }
+        if settings.ocrEnabled && !Permissions.canCaptureScreen { return .permissionsNeeded }
         return .ready
     }
 
@@ -240,8 +279,17 @@ final class StatusMenuController: NSObject {
         rebuildMenu()
     }
 
+    @objc private func toggleOCR() {
+        settings.ocrEnabled.toggle()
+        rebuildMenu()
+    }
+
     @objc private func openSettings() {
-        showSettings?()
+        showSettings?(nil)
+    }
+
+    @objc private func openPermissions() {
+        showSettings?(.permissions)
     }
 
     @objc private func quit() {
@@ -275,6 +323,16 @@ private enum StatusSummary {
             return true
         case .paused, .ready:
             return false
+        }
+    }
+
+    /// Icon for the clickable attention states (never shown for the others).
+    var symbolName: String {
+        switch self {
+        case .needsFinderExtension:
+            return "puzzlepiece.extension"
+        case .paused, .permissionsNeeded, .ready:
+            return "lock.shield"
         }
     }
 }

@@ -1,7 +1,7 @@
 import XCTest
 
 final class SettingsSchemaTests: XCTestCase {
-    private let suiteName = "com.noah.MacTweaks.SettingsSchemaTests"
+    private let suiteName = "com.ncleroy.MacTweaks.SettingsSchemaTests"
 
     private func emptyDefaults() -> UserDefaults {
         let defaults = UserDefaults(suiteName: suiteName)!
@@ -30,8 +30,8 @@ final class SettingsSchemaTests: XCTestCase {
     }
 
     func testBuiltInDefaultWhenAbsentEverywhere() {
-        // cutFilesEnabled defaults false; masterEnabled defaults true.
-        XCTAssertFalse(SettingsSchema.cutFilesEnabled.resolved(file: [:], defaults: emptyDefaults()))
+        // openContainingFolderForFiles defaults false; masterEnabled defaults true.
+        XCTAssertFalse(SettingsSchema.openContainingFolderForFiles.resolved(file: [:], defaults: emptyDefaults()))
         XCTAssertTrue(SettingsSchema.masterEnabled.resolved(file: [:], defaults: emptyDefaults()))
     }
 
@@ -59,7 +59,7 @@ final class SettingsSchemaTests: XCTestCase {
     }
 
     func testDefaultStoredEncodesTheDefault() {
-        XCTAssertEqual(SettingsSchema.cutFilesEnabled.defaultStored as? Bool, false)
+        XCTAssertEqual(SettingsSchema.openContainingFolderForFiles.defaultStored as? Bool, false)
         XCTAssertEqual(SettingsSchema.masterEnabled.defaultStored as? Bool, true)
     }
 
@@ -74,7 +74,7 @@ final class SettingsSchemaTests: XCTestCase {
         // layers, so every encoded default must be a property-list type.
         for setting in SettingsSchema.all {
             let stored = setting.defaultStored
-            let isPlist = stored is Bool || stored is String || stored is [String] || stored is NSNumber
+            let isPlist = stored is Bool || stored is String || stored is [String] || stored is NSNumber || stored is [String: Int]
             XCTAssertTrue(isPlist, "\(setting.key) default is not property-list storable: \(type(of: stored))")
         }
     }

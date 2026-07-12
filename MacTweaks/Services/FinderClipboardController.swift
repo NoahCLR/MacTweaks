@@ -20,9 +20,7 @@ import os
 /// foreign app writing file URLs can never turn into one of our moves.
 final class FinderClipboardController {
     private let settings: SharedSettingsStore
-    private let logger = Logger(subsystem: "com.noah.MacTweaks", category: "FinderClipboard")
-
-    private var didRequestInputEventAccess = false
+    private let logger = Logger(subsystem: "com.ncleroy.MacTweaks", category: "FinderClipboard")
 
     private let vKeyCode: Int64 = 9
     private let xKeyCode: Int64 = 7
@@ -56,16 +54,11 @@ final class FinderClipboardController {
             facts: TapGateFacts(
                 masterEnabled: settings.masterEnabled,
                 featureEnabled: pasteAsFileEnabled || settings.cutFilesEnabled,
-                accessibilityTrusted: Permissions.isAccessibilityTrusted,
-                inputMonitoringGranted: Permissions.canListenToInputEvents,
-                inputMonitoringAlreadyRequested: didRequestInputEventAccess,
-                requiresInputMonitoring: true
+                accessibilityTrusted: Permissions.isAccessibilityTrusted
             ),
             tap: tap,
-            didRequestInput: &didRequestInputEventAccess,
-            requestInput: Permissions.requestInputEventPermission,
             onEnableFailure: {
-                self.logger.error("Finder clipboard event tap could not start. Accessibility: \(Permissions.isAccessibilityTrusted, privacy: .public), Input events: \(Permissions.canListenToInputEvents, privacy: .public)")
+                self.logger.error("Finder clipboard event tap could not start. Accessibility: \(Permissions.isAccessibilityTrusted, privacy: .public)")
             }
         )
     }

@@ -57,6 +57,18 @@
 		000000000000000000000117 /* FinderActionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000209 /* FinderActionService.swift */; };
 		000000000000000000000142 /* EventDecisions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000240 /* EventDecisions.swift */; };
 		000000000000000000000118 /* MacTweaksFinderExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 000000000000000000000302 /* MacTweaksFinderExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		000000000000000000000164 /* HotKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000255 /* HotKey.swift */; };
+		000000000000000000000165 /* HotKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000255 /* HotKey.swift */; };
+		000000000000000000000166 /* HotKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000255 /* HotKey.swift */; };
+		000000000000000000000167 /* OCRService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000256 /* OCRService.swift */; };
+		000000000000000000000168 /* OCRService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000256 /* OCRService.swift */; };
+		000000000000000000000169 /* ScreenCaptureOCRController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000257 /* ScreenCaptureOCRController.swift */; };
+		000000000000000000000170 /* ShortcutRecorderField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000258 /* ShortcutRecorderField.swift */; };
+		000000000000000000000171 /* HotKeyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000259 /* HotKeyTests.swift */; };
+		000000000000000000000172 /* OCRToast.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000260 /* OCRToast.swift */; };
+		000000000000000000000173 /* OCRToast.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000260 /* OCRToast.swift */; };
+		000000000000000000000174 /* PermissionOnboardingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000261 /* PermissionOnboardingTests.swift */; };
+		000000000000000000000175 /* Permissions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000245 /* Permissions.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -127,6 +139,13 @@
 		000000000000000000000242 /* EventTap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventTap.swift; sourceTree = "<group>"; };
 		000000000000000000000245 /* Permissions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Permissions.swift; sourceTree = "<group>"; };
 		000000000000000000000246 /* TweakControllers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TweakControllers.swift; sourceTree = "<group>"; };
+		000000000000000000000255 /* HotKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotKey.swift; sourceTree = "<group>"; };
+		000000000000000000000256 /* OCRService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OCRService.swift; sourceTree = "<group>"; };
+		000000000000000000000257 /* ScreenCaptureOCRController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenCaptureOCRController.swift; sourceTree = "<group>"; };
+		000000000000000000000258 /* ShortcutRecorderField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutRecorderField.swift; sourceTree = "<group>"; };
+		000000000000000000000259 /* HotKeyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotKeyTests.swift; sourceTree = "<group>"; };
+		000000000000000000000260 /* OCRToast.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OCRToast.swift; sourceTree = "<group>"; };
+		000000000000000000000261 /* PermissionOnboardingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionOnboardingTests.swift; sourceTree = "<group>"; };
 		000000000000000000000222 /* FinderInputContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinderInputContext.swift; sourceTree = "<group>"; };
 		000000000000000000000301 /* Mac Tweaks.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Mac Tweaks.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		000000000000000000000302 /* MacTweaksFinderExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MacTweaksFinderExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -197,6 +216,7 @@
 				000000000000000000000208 /* SharedSettingsStore.swift */,
 				000000000000000000000209 /* FinderActionService.swift */,
 				000000000000000000000240 /* EventDecisions.swift */,
+				000000000000000000000255 /* HotKey.swift */,
 				000000000000000000000219 /* FinderMenuAction.swift */,
 				000000000000000000000250 /* FinderActionMenu.swift */,
 				000000000000000000000252 /* TapGate.swift */,
@@ -214,6 +234,8 @@
 				000000000000000000000249 /* FinderInputContextTests.swift */,
 				000000000000000000000251 /* FinderActionMenuTests.swift */,
 				000000000000000000000254 /* TapGateTests.swift */,
+				000000000000000000000259 /* HotKeyTests.swift */,
+				000000000000000000000261 /* PermissionOnboardingTests.swift */,
 				000000000000000000000216 /* Info.plist */,
 			);
 			path = Tests;
@@ -243,6 +265,8 @@
 			isa = PBXGroup;
 			children = (
 				000000000000000000000204 /* SettingsView.swift */,
+				000000000000000000000258 /* ShortcutRecorderField.swift */,
+				000000000000000000000260 /* OCRToast.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -261,6 +285,8 @@
 				000000000000000000000246 /* TweakControllers.swift */,
 				000000000000000000000222 /* FinderInputContext.swift */,
 				000000000000000000000253 /* TapGateReconcile.swift */,
+				000000000000000000000256 /* OCRService.swift */,
+				000000000000000000000257 /* ScreenCaptureOCRController.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -420,6 +446,11 @@
 				000000000000000000000156 /* FinderActionMenu.swift in Sources */,
 				000000000000000000000160 /* TapGate.swift in Sources */,
 				000000000000000000000162 /* TapGateReconcile.swift in Sources */,
+				000000000000000000000164 /* HotKey.swift in Sources */,
+				000000000000000000000167 /* OCRService.swift in Sources */,
+				000000000000000000000169 /* ScreenCaptureOCRController.swift in Sources */,
+				000000000000000000000170 /* ShortcutRecorderField.swift in Sources */,
+				000000000000000000000172 /* OCRToast.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -435,6 +466,7 @@
 				000000000000000000000141 /* EventDecisions.swift in Sources */,
 				000000000000000000000122 /* FinderMenuAction.swift in Sources */,
 				000000000000000000000157 /* FinderActionMenu.swift in Sources */,
+				000000000000000000000165 /* HotKey.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -459,6 +491,12 @@
 				000000000000000000000159 /* FinderActionMenuTests.swift in Sources */,
 				000000000000000000000161 /* TapGate.swift in Sources */,
 				000000000000000000000163 /* TapGateTests.swift in Sources */,
+				000000000000000000000166 /* HotKey.swift in Sources */,
+				000000000000000000000168 /* OCRService.swift in Sources */,
+				000000000000000000000171 /* HotKeyTests.swift in Sources */,
+				000000000000000000000173 /* OCRToast.swift in Sources */,
+				000000000000000000000174 /* PermissionOnboardingTests.swift in Sources */,
+				000000000000000000000175 /* Permissions.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -609,7 +647,7 @@
 					"@executable_path/../Frameworks",
 					"@executable_path/../PlugIns",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.noah.MacTweaks;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ncleroy.MacTweaks;
 				PRODUCT_NAME = "Mac Tweaks";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_VERSION = 5.0;
@@ -630,7 +668,7 @@
 					"@executable_path/../Frameworks",
 					"@executable_path/../PlugIns",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.noah.MacTweaks;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ncleroy.MacTweaks;
 				PRODUCT_NAME = "Mac Tweaks";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_VERSION = 5.0;
@@ -650,7 +688,7 @@
 					"@executable_path/../../../../Frameworks",
 					"@executable_path/../../../../../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.noah.MacTweaks.FinderExtension;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ncleroy.MacTweaks.FinderExtension;
 				PRODUCT_NAME = MacTweaksFinderExtension;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
@@ -672,7 +710,7 @@
 					"@executable_path/../../../../Frameworks",
 					"@executable_path/../../../../../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.noah.MacTweaks.FinderExtension;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ncleroy.MacTweaks.FinderExtension;
 				PRODUCT_NAME = MacTweaksFinderExtension;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
@@ -687,7 +725,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Tests/Info.plist;
-				PRODUCT_BUNDLE_IDENTIFIER = com.noah.MacTweaksTests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ncleroy.MacTweaksTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 			};
@@ -699,7 +737,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Tests/Info.plist;
-				PRODUCT_BUNDLE_IDENTIFIER = com.noah.MacTweaksTests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ncleroy.MacTweaksTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 			};

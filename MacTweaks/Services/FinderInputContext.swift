@@ -13,7 +13,7 @@ import os
 /// The AppleScript-backed reads run Finder automation, so never call them from
 /// inside an event-tap callback — dispatch off the tap thread first.
 enum FinderInputContext {
-    private static let logger = Logger(subsystem: "com.noah.MacTweaks", category: "FinderInputContext")
+    private static let logger = Logger(subsystem: "com.ncleroy.MacTweaks", category: "FinderInputContext")
 
     static var frontmostIsFinder: Bool {
         NSWorkspace.shared.frontmostApplication?.bundleIdentifier == "com.apple.finder"

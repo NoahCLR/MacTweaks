@@ -4,9 +4,7 @@ import os
 
 final class KeyboardDeleteController {
     private let settings: SharedSettingsStore
-    private let logger = Logger(subsystem: "com.noah.MacTweaks", category: "KeyboardDelete")
-
-    private var didRequestInputEventAccess = false
+    private let logger = Logger(subsystem: "com.ncleroy.MacTweaks", category: "KeyboardDelete")
 
     private let backspaceKeyCode: Int64 = 51
     private let forwardDeleteKeyCode: Int64 = 117
@@ -31,16 +29,11 @@ final class KeyboardDeleteController {
             facts: TapGateFacts(
                 masterEnabled: settings.masterEnabled,
                 featureEnabled: settings.deleteKeyEnabled,
-                accessibilityTrusted: Permissions.isAccessibilityTrusted,
-                inputMonitoringGranted: Permissions.canListenToInputEvents,
-                inputMonitoringAlreadyRequested: didRequestInputEventAccess,
-                requiresInputMonitoring: true
+                accessibilityTrusted: Permissions.isAccessibilityTrusted
             ),
             tap: tap,
-            didRequestInput: &didRequestInputEventAccess,
-            requestInput: Permissions.requestInputEventPermission,
             onEnableFailure: {
-                self.logger.error("Keyboard event tap could not start. Accessibility: \(Permissions.isAccessibilityTrusted, privacy: .public), Input events: \(Permissions.canListenToInputEvents, privacy: .public)")
+                self.logger.error("Keyboard event tap could not start. Accessibility: \(Permissions.isAccessibilityTrusted, privacy: .public)")
             }
         )
     }

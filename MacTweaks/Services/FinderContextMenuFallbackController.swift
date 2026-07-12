@@ -4,7 +4,7 @@ import os
 
 final class FinderContextMenuFallbackController: NSObject {
     private let settings: SharedSettingsStore
-    private let logger = Logger(subsystem: "com.noah.MacTweaks", category: "FinderContextMenuFallback")
+    private let logger = Logger(subsystem: "com.ncleroy.MacTweaks", category: "FinderContextMenuFallback")
 
     private var pendingMouseLocation: CGPoint?
     private var fallbackMenu: NSMenu?
@@ -55,10 +55,7 @@ final class FinderContextMenuFallbackController: NSObject {
             facts: TapGateFacts(
                 masterEnabled: settings.masterEnabled,
                 featureEnabled: settings.enhancedFinderMenusEnabled && hasEnabledFinderAction,
-                accessibilityTrusted: Permissions.isAccessibilityTrusted,
-                inputMonitoringGranted: false,
-                inputMonitoringAlreadyRequested: false,
-                requiresInputMonitoring: false
+                accessibilityTrusted: Permissions.isAccessibilityTrusted
             ),
             enable: { self.tap.enable() },
             disable: { self.stop() },

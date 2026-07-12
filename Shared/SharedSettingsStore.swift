@@ -17,6 +17,8 @@ struct SettingsSnapshot {
     let ideApplicationURL: URL?
     let terminalApplicationURL: URL?
     let finderActionOrder: [FinderMenuAction]
+    let ocrEnabled: Bool
+    let ocrHotKey: HotKey
     let monitoredFolderURLs: [URL]
 
     init(
@@ -35,7 +37,9 @@ struct SettingsSnapshot {
         clipboardToFileEnabled: Bool = false,
         pasteImageAsFile: Bool = true,
         pasteTextAsFile: Bool = true,
-        cutFilesEnabled: Bool = false
+        cutFilesEnabled: Bool = false,
+        ocrEnabled: Bool = false,
+        ocrHotKey: HotKey = .defaultOCRHotKey
     ) {
         self.masterEnabled = masterEnabled
         self.createFileEnabled = createFileEnabled
@@ -52,6 +56,8 @@ struct SettingsSnapshot {
         self.ideApplicationURL = ideApplicationURL
         self.terminalApplicationURL = terminalApplicationURL
         self.finderActionOrder = FinderMenuAction.normalizedOrder(finderActionOrder)
+        self.ocrEnabled = ocrEnabled
+        self.ocrHotKey = ocrHotKey
         self.monitoredFolderURLs = monitoredFolderURLs
     }
 
@@ -76,6 +82,8 @@ struct SettingsSnapshot {
         ideApplicationURL = SettingsSchema.ideApplicationURL.resolved(file: fileSettings, defaults: defaults)
         terminalApplicationURL = SettingsSchema.terminalApplicationURL.resolved(file: fileSettings, defaults: defaults)
         finderActionOrder = SettingsSchema.finderActionOrder.resolved(file: fileSettings, defaults: defaults)
+        ocrEnabled = SettingsSchema.ocrEnabled.resolved(file: fileSettings, defaults: defaults)
+        ocrHotKey = SettingsSchema.ocrHotKey.resolved(file: fileSettings, defaults: defaults)
 
         let storedPaths = fileSettings[SettingsKey.monitoredFolderPaths] as? [String]
             ?? defaults.stringArray(forKey: SettingsKey.monitoredFolderPaths)
@@ -107,6 +115,8 @@ final class SharedSettingsStore: ObservableObject {
     @Published var ideApplicationURL: URL? { didSet { save(ideApplicationURL?.path ?? "", for: SettingsKey.ideApplicationPath) } }
     @Published var terminalApplicationURL: URL? { didSet { save(terminalApplicationURL?.path ?? "", for: SettingsKey.terminalApplicationPath) } }
     @Published var finderActionOrder: [FinderMenuAction] { didSet { save(finderActionOrder.map(\.rawValue), for: SettingsKey.finderActionOrder) } }
+    @Published var ocrEnabled: Bool { didSet { save(ocrEnabled, for: SettingsKey.ocrEnabled) } }
+    @Published var ocrHotKey: HotKey { didSet { save(ocrHotKey.storedValue, for: SettingsKey.ocrHotKey) } }
     @Published var monitoredFolderURLs: [URL] { didSet { save(monitoredFolderURLs.map(\.path), for: SettingsKey.monitoredFolderPaths) } }
 
     private let defaults: UserDefaults
@@ -130,6 +140,8 @@ final class SharedSettingsStore: ObservableObject {
         ideApplicationURL = snapshot.ideApplicationURL
         terminalApplicationURL = snapshot.terminalApplicationURL
         finderActionOrder = snapshot.finderActionOrder
+        ocrEnabled = snapshot.ocrEnabled
+        ocrHotKey = snapshot.ocrHotKey
         monitoredFolderURLs = snapshot.monitoredFolderURLs
         isLoading = false
         writeDefaultsIfMissing()

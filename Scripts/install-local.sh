@@ -7,7 +7,7 @@ DERIVED_DATA="$BUILD_DIR/DerivedData"
 APP_NAME="Mac Tweaks.app"
 BUILT_APP="$DERIVED_DATA/Build/Products/Release/$APP_NAME"
 INSTALL_APP="/Applications/$APP_NAME"
-EXTENSION_ID="com.noah.MacTweaks.FinderExtension"
+EXTENSION_ID="com.ncleroy.MacTweaks.FinderExtension"
 
 source "$ROOT_DIR/Scripts/signing-common.sh"
 

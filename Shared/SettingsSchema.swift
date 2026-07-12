@@ -82,6 +82,21 @@ extension Setting where Value == URL? {
     }
 }
 
+extension Setting where Value == HotKey {
+    /// A hotkey stores a small `[String: Int]` plist dictionary; a missing or
+    /// garbled value falls back to the built-in default (the feature is gated by
+    /// its own enable toggle, so the shortcut is always a concrete combination).
+    init(_ key: String, default defaultValue: HotKey, read: KeyPath<SharedSettingsStore, HotKey>) {
+        self.init(
+            key: key,
+            defaultValue: defaultValue,
+            decode: { HotKey(stored: $0) ?? defaultValue },
+            encode: { $0.storedValue },
+            read: read
+        )
+    }
+}
+
 extension Setting where Value == [FinderMenuAction] {
     init(_ key: String, default defaultValue: [FinderMenuAction], read: KeyPath<SharedSettingsStore, [FinderMenuAction]>) {
         self.init(
@@ -104,15 +119,17 @@ enum SettingsSchema {
     static let copyPathEnabled = Setting(SettingsKey.copyPathEnabled, default: true, read: \.copyPathEnabled)
     static let openTerminalEnabled = Setting(SettingsKey.openTerminalEnabled, default: true, read: \.openTerminalEnabled)
     static let enhancedFinderMenusEnabled = Setting(SettingsKey.enhancedFinderMenusEnabled, default: true, read: \.enhancedFinderMenusEnabled)
-    static let deleteKeyEnabled = Setting(SettingsKey.deleteKeyEnabled, default: false, read: \.deleteKeyEnabled)
-    static let clipboardToFileEnabled = Setting(SettingsKey.clipboardToFileEnabled, default: false, read: \.clipboardToFileEnabled)
+    static let deleteKeyEnabled = Setting(SettingsKey.deleteKeyEnabled, default: true, read: \.deleteKeyEnabled)
+    static let clipboardToFileEnabled = Setting(SettingsKey.clipboardToFileEnabled, default: true, read: \.clipboardToFileEnabled)
     static let pasteImageAsFile = Setting(SettingsKey.pasteImageAsFile, default: true, read: \.pasteImageAsFile)
     static let pasteTextAsFile = Setting(SettingsKey.pasteTextAsFile, default: true, read: \.pasteTextAsFile)
-    static let cutFilesEnabled = Setting(SettingsKey.cutFilesEnabled, default: false, read: \.cutFilesEnabled)
+    static let cutFilesEnabled = Setting(SettingsKey.cutFilesEnabled, default: true, read: \.cutFilesEnabled)
     static let openContainingFolderForFiles = Setting(SettingsKey.openContainingFolderForFiles, default: false, read: \.openContainingFolderForFiles)
     static let ideApplicationURL = Setting(SettingsKey.ideApplicationPath, appDefault: FinderActionService.defaultIDEApplicationURL, read: \.ideApplicationURL)
     static let terminalApplicationURL = Setting(SettingsKey.terminalApplicationPath, appDefault: FinderActionService.defaultTerminalApplicationURL, read: \.terminalApplicationURL)
     static let finderActionOrder = Setting(SettingsKey.finderActionOrder, default: FinderMenuAction.defaultOrder, read: \.finderActionOrder)
+    static let ocrEnabled = Setting(SettingsKey.ocrEnabled, default: true, read: \.ocrEnabled)
+    static let ocrHotKey = Setting(SettingsKey.ocrHotKey, default: HotKey.defaultOCRHotKey, read: \.ocrHotKey)
 
     /// Every registry-backed setting, in declaration order. Drives
     /// write-defaults-if-missing and file persistence.
@@ -121,6 +138,6 @@ enum SettingsSchema {
         openTerminalEnabled, enhancedFinderMenusEnabled, deleteKeyEnabled,
         clipboardToFileEnabled, pasteImageAsFile, pasteTextAsFile, cutFilesEnabled,
         openContainingFolderForFiles, ideApplicationURL, terminalApplicationURL,
-        finderActionOrder
+        finderActionOrder, ocrEnabled, ocrHotKey
     ]
 }

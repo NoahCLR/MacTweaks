@@ -4,7 +4,7 @@ import os
 
 final class FinderSync: FIFinderSync {
     private let defaults = SharedDefaults.makeUserDefaults()
-    private let logger = Logger(subsystem: "com.noah.MacTweaks", category: "FinderSync")
+    private let logger = Logger(subsystem: "com.ncleroy.MacTweaks", category: "FinderSync")
 
     // Builds and runs the action menu. Context is resolved lazily at click time
     // (`resolvedContext`), so menu items gate on `.lazy` (app-dependency only).
